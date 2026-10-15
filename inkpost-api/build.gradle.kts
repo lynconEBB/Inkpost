@@ -13,13 +13,18 @@ java {
 	}
 }
 
+// Boot's managed Lombok (1.18.46) fails on JDK 27; 1.18.48 supports it.
+extra["lombok.version"] = "1.18.48"
+
 repositories {
 	mavenCentral()
 }
 
 dependencies {
+	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")
+	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1")
 	compileOnly("org.projectlombok:lombok")
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 	annotationProcessor("org.projectlombok:lombok")
