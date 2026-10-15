@@ -1,1 +1,4 @@
 build
+main/secrets.h
+test/sdkconfig
+test/sdkconfig.old

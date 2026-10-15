@@ -85,6 +85,37 @@ Firmware is only updated by flashing over USB.
 **Why:** keeps the firmware simple; the owner has physical access to the frame to reflash if needed.
 Revisit if this becomes a product (note: adding OTA later requires one USB flash first).
 
+### D28. Firmware modules: one header + one `.c` in `main/`, blocking API, no callbacks
+Each abstraction (`ink_wifi`, `ink_http`, …) is a header we call and a `.c` that implements it,
+all in `main/`. No ESP-IDF components: the separation is ours to keep (only use a module through
+its header). Every call blocks until done; the ESP-IDF event machinery stays inside the `.c`.
+The `ink_` prefix avoids clashes with ESP-IDF names (`wifi_*`, `HTTP_GET`).
+**Why:** the code is only used by this project; blocking calls make the cycle (D1) read top to bottom.
+
+### D29. HTTP layer contract
+- HTTPS is always verified against the ESP-IDF certificate bundle.
+- `ink_http_request` returns `ESP_OK` whenever a complete response arrived, whatever the status
+  code; the status, all response headers and the body are in the response struct.
+- The whole body is buffered in RAM, up to a max size (default 64 KB). A body cut short is an
+  error, never a success (D5).
+- GET only, redirects not followed. POST can be added later as new request fields.
+- Response headers are collected by our own code: ESP-IDF's built-in saving keeps only 10, and
+  Cloudflare sends more, so the ETag (D9) could be lost.
+
+### D30. Secrets live in a gitignored `main/secrets.h`
+Refines D7: Wi-Fi credentials (and later the API key, D8) are still compiled in, but from
+`main/secrets.h`, which is not committed. `main/secrets.h.example` is the template to copy.
+
+### D31. Tests are on-device integration tests
+`inkpost-firmware/test/` is a separate ESP-IDF project that compiles the modules from `main/` and
+runs Unity tests on the real board, against the real Wi-Fi and real HTTPS servers (httpbin.org,
+badssl.com). No host-side mocks.
+**Why:** Wi-Fi only exists on the device, and mocking `esp_http_client` would only test the mock.
+
+### D32. Single large app partition (1.5 MB)
+Wi-Fi + TLS alone already took 0.97 MB of the default 1 MB app partition. Without OTA (D13) one
+big app slot is enough.
+
 ## API / web app
 
 ### D14. One Spring Boot app: Thymeleaf web app + one REST endpoint for the device
