@@ -28,6 +28,9 @@ If NTP fails, fall back to sleeping 3 hours from now.
 The API returns the image already packed for the Waveshare 7.5" V2 (800×480, black/white),
 in the panel's native bit packing (verified). The firmware does no image processing; the
 server does resize/dither/pack.
+Exact format: 1 bit per pixel, bit 1 = white, 0 = black; rows top to bottom, 100 bytes each;
+the most significant bit of each byte is the leftmost pixel. This is the format the
+`epaper_test` prototype's pixel art was verified with.
 
 ### D5. Download fully into RAM and validate before touching the display
 The firmware buffers the whole response, and only draws if the request succeeded and exactly
@@ -115,6 +118,21 @@ badssl.com). No host-side mocks.
 ### D32. Single large app partition (1.5 MB)
 Wi-Fi + TLS alone already took 0.97 MB of the default 1 MB app partition. Without OTA (D13) one
 big app slot is enough.
+
+### D33. Display module: init / draw / clear / draw_checker / deinit
+`ink_display` drives the 7.5" V2 panel through the e-Paper Driver HAT Rev2.3, using the protocol
+of Waveshare's reference driver (ported via the `epaper_test` prototype). Full refreshes only.
+The panel is powered through the HAT's PWR pin only between init and deinit.
+`draw_checker` draws a test pattern; the wiring and HAT switch settings are at the top of
+`ink_display.c`.
+**Why:** the cycle (D1) needs nothing more; Waveshare warns against leaving a panel powered.
+
+### D34. Display failures are errors, never a silent success
+SPI to the panel is one-way, so failures are detected through the BUSY pin: the panel never
+becoming ready (`ESP_ERR_TIMEOUT`) or never starting a refresh (`ESP_ERR_INVALID_RESPONSE`).
+Every error is returned, nothing aborts.
+**Why:** a draw that reports success with nothing drawn would make the firmware store the new
+ETag (D9), and that image would never be retried.
 
 ## API / web app
 
