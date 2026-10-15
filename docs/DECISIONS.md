@@ -134,6 +134,14 @@ Every error is returned, nothing aborts.
 **Why:** a draw that reports success with nothing drawn would make the firmware store the new
 ETag (D9), and that image would never be retried.
 
+### D35. Forced full redraw once a day
+Waveshare recommends refreshing the panel at least once every 24 hours, and refreshes at least
+180 s apart. With D9 alone, an unchanged image would never be redrawn. So the wake at the 00:00
+mark (00:01, D25) sends no `If-None-Match`, the server returns the image, and the panel is
+redrawn. If NTP failed on that wake (D24), the time is unknown and it is a normal wake.
+The 3-hour cycle (D3) already keeps refreshes far more than 180 s apart.
+**Why:** keeps the panel healthy, and at night nobody sees the ~4 s flash.
+
 ## API / web app
 
 ### D14. One Spring Boot app: Thymeleaf web app + one REST endpoint for the device
