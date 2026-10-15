@@ -7,6 +7,11 @@ A gift: a picture frame with a Waveshare 7.5" e-paper display driven by an ESP32
 - `inkpost-firmware/`: ESP-IDF firmware for the ESP32 that drives the e-paper display and fetches content from the API.
 - `inkpost-api/`: the API that decides and serves what the frame displays.
 
+## Git workflow
+
+All work towards the first version (0.1) is committed on the `initial-wip` branch, even when
+commits are unrelated. `main` only receives that branch once 0.1 is done.
+
 ## Design decisions
 
 All design decisions are recorded in `docs/DECISIONS.md`. Read it before making changes, and add new decisions there.
