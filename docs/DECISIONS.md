@@ -15,13 +15,18 @@ The e-paper keeps showing the last image, so a failed cycle is invisible.
 
 ### D3. Fixed 3-hour cycle, aligned to the clock (see D24)
 Wakes happen at fixed 3-hour marks of local time (00:00, 03:00, 06:00, …), not "3 hours from now".
+Exact rule: wake 1 min past (D25) the next mark that is at least 5 min away. After power-on the
+first wake is that next mark (14:30 → 15:01, 14:57 → 18:01); after that it is always 00:01,
+03:01, …, 21:01. The 5 min also absorbs a slightly early wake (17:59:50 → 21:01, not 18:01 again).
 **Why:** simplicity. A server-controlled interval (`X-Sleep-Seconds` header) was considered and
 deferred; revisit if this ever becomes a product.
 
 ### D24. NTP time sync for clock-aligned wakes
 After Wi-Fi connects, the firmware syncs time via SNTP and sleeps until the next 3-hour mark
-in local time. The POSIX TZ string is hardcoded in the firmware (like the Wi-Fi credentials).
-If NTP fails, fall back to sleeping 3 hours from now.
+in local time. The POSIX TZ string is hardcoded in the firmware (like the Wi-Fi credentials):
+`"<-03>3"`, Brasília (D27).
+If NTP fails, the clock kept through deep sleep is used, as long as it was set since power-on
+(D36: it drifts about 0.1 %). Only if it was never set does the firmware sleep 3 hours from now.
 **Why:** removes deep-sleep timer drift; frames scheduled on a mark show up within minutes.
 
 ### D4. Image format: raw 48000-byte, 1bpp buffer
@@ -126,6 +131,8 @@ The panel is powered through the HAT's PWR pin only between init and deinit.
 `draw_checker` draws a test pattern; the wiring and HAT switch settings are at the top of
 `ink_display.c`.
 **Why:** the cycle (D1) needs nothing more; Waveshare warns against leaving a panel powered.
+After deinit, PWR (GPIO32, an RTC pin) is held low with `gpio_hold_en`, so the panel stays
+unpowered through deep sleep instead of the pin floating.
 
 ### D34. Display failures are errors, never a silent success
 SPI to the panel is one-way, so failures are detected through the BUSY pin: the panel never
@@ -141,6 +148,25 @@ mark (00:01, D25) sends no `If-None-Match`, the server returns the image, and th
 redrawn. If NTP failed on that wake (D24), the time is unknown and it is a normal wake.
 The 3-hour cycle (D3) already keeps refreshes far more than 180 s apart.
 **Why:** keeps the panel healthy, and at night nobody sees the ~4 s flash.
+
+### D36. RTC clock source: internal 8.5 MHz ÷ 256, no SNTP startup delay
+Measured on the frame's board against NTP (three 10-minute deep sleeps each):
+- Internal 150 kHz RC (ESP-IDF default): 1.3–2.3 % fast, changing with temperature. That is
+  about 2.5–4 min early per 3 h sleep, enough to fetch before the mark (D25).
+- Internal 8.5 MHz ÷ 256: a steady 0.1 % slow, about 11 s late per 3 h sleep.
+The firmware uses 8.5 MHz ÷ 256 (`CONFIG_RTC_CLK_SRC_INT_8MD256`, `CONFIG_RTC_CLK_CAL_CYCLES=3000`,
+as measured). Its extra 5 µA of sleep current doesn't matter on USB power (D6). An external
+32 kHz crystal would need GPIO32/33, and GPIO32 is the display's PWR pin.
+`CONFIG_LWIP_SNTP_STARTUP_DELAY` is off: its random 0–5 s wait before the first NTP request is
+for fleets of devices, and for one frame it only delays every wake.
+
+### D37. `ink_time` module, and `main.c` is just the cycle
+`ink_time` does NTP sync, current local time, rounding up to N-hour marks, seconds until a time,
+and deep sleep. `main.c` runs the cycle (D1): up to 3 attempts (D2) of Wi-Fi, NTP, fetch and draw,
+then Wi-Fi off and deep sleep until the next wake (D3). Deep sleep never returns: every wake
+starts `app_main` from the top, so there is no loop in the code (D11).
+For now `IMAGE_URL` (in `secrets.h`) points at the API's test image, with no ETag (D9), so every
+wake redraws. That also covers D35.
 
 ## API / web app
 
@@ -207,7 +233,8 @@ the frame actually wakes.
 - No entry has started yet → the device endpoint returns `404`; the firmware treats it as a
   failure and leaves the display untouched (D5).
 - Device and server use the same explicitly configured timezone (server: `application.properties`,
-  firmware: POSIX TZ string). Zone to be filled in.
+  firmware: POSIX TZ string). The zone is Brasília: `America/Sao_Paulo` on the server, `"<-03>3"`
+  in the firmware (UTC−3, no daylight saving time).
 - A frame that appears in the schedule cannot be deleted; remove it from the schedule first.
 
 ## Guiding principle

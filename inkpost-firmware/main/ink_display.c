@@ -127,6 +127,7 @@ static esp_err_t wait_idle(void)
 static void release(void)
 {
     gpio_set_level(PIN_PWR, 0);
+    gpio_hold_en(PIN_PWR); // GPIO32 is an RTC pin: the hold keeps the panel off through deep sleep
     gpio_set_level(PIN_CS, 0);
     gpio_set_level(PIN_DC, 0);
     gpio_set_level(PIN_RST, 0);
@@ -142,6 +143,7 @@ static void release(void)
 
 static esp_err_t setup_pins_and_spi(void)
 {
+    RETURN_ON_ERROR(gpio_hold_dis(PIN_PWR)); // Held low by release(), maybe since before a deep sleep
     if (!s_pins_configured) {
         gpio_config_t outputs = {
             .pin_bit_mask = BIT64(PIN_CS) | BIT64(PIN_DC) | BIT64(PIN_RST) | BIT64(PIN_PWR),
