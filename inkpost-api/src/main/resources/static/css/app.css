@@ -510,6 +510,7 @@ a {
 .message__text {
 	flex: 1;
 	padding: var(--space-2) 0;
+	white-space: pre-line;
 }
 
 .message--error {
@@ -639,6 +640,84 @@ a {
 	padding: 0 var(--space-2);
 }
 
+/* ---------- Upload page ---------- */
+
+.upload {
+	display: grid;
+	gap: var(--space-5);
+}
+
+.upload__preview {
+	display: grid;
+	align-content: start;
+	gap: var(--space-3);
+}
+
+/* "Actual pixels" can be wider than a phone: it scrolls inside, never the page. */
+.preview {
+	overflow-x: auto;
+}
+
+.preview__empty {
+	cursor: pointer;
+}
+
+.preview__canvas {
+	width: 100%;
+	height: auto;
+	border: 1px solid var(--color-border);
+	background: #ffffff;
+	image-rendering: pixelated;
+	cursor: grab;
+	/* Dragging moves the photo instead of scrolling the page. */
+	touch-action: none;
+}
+
+.preview__canvas:active {
+	cursor: grabbing;
+}
+
+.preview--actual .preview__canvas {
+	max-width: none;
+}
+
+.file-input:focus-visible + .button {
+	outline: 3px solid var(--color-focus);
+	outline-offset: 2px;
+}
+
+.fieldset {
+	display: grid;
+	gap: var(--space-4);
+	min-width: 0;
+	padding: 0;
+	border: 0;
+}
+
+.fieldset legend {
+	margin-bottom: var(--space-2);
+	padding: 0;
+}
+
+.fieldset:disabled {
+	opacity: 0.55;
+}
+
+.field__row {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: var(--space-2);
+}
+
+.field__row output {
+	font-variant-numeric: tabular-nums;
+}
+
+.upload > .action-bar {
+	margin-top: 0;
+}
+
 /* ---------- Large phones and tablets ---------- */
 
 @media (min-width: 40rem) {
@@ -670,5 +749,29 @@ a {
 		padding: 0;
 		border: 0;
 		background: none;
+	}
+
+	/* The preview on the left, the controls on the right. */
+	.upload {
+		grid-template-columns: minmax(0, 1fr) 22rem;
+		grid-template-areas:
+			"preview controls"
+			"preview actions";
+		align-items: start;
+		column-gap: var(--space-6);
+	}
+
+	.upload__preview {
+		position: sticky;
+		top: var(--space-4);
+		grid-area: preview;
+	}
+
+	.upload__controls {
+		grid-area: controls;
+	}
+
+	.upload > .action-bar {
+		grid-area: actions;
 	}
 }

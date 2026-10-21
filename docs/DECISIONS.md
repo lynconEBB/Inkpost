@@ -426,6 +426,26 @@ Every page works on a phone and on a desktop.
 **Why:** the content changes throughout the day, from wherever the owner is, so a phone is the
 first screen to design for.
 
+### D44. Photos become frames in the browser
+The upload page turns a photo into the 800×480 PNG of pure black and white that D41 accepts; the
+browser is the only renderer (D19).
+- **Decode:** `createImageBitmap` with the EXIF orientation applied, so phone photos stay upright. A
+  file the browser can't decode (e.g. HEIC on a desktop) gets "Can't read this image, use a JPEG or
+  PNG".
+- **Crop to fill:** the photo is scaled to cover 800×480 and centered. Dragging (Pointer Events, mouse
+  and touch) moves it, clamped so the frame is always covered, so only one axis moves. No zoom or
+  rotation.
+- **Adjust:** brightness and contrast (−100 … 100), and the dithering: Floyd–Steinberg (the default,
+  serpentine), Atkinson, or a 50% threshold. The preview is the dithered result; while dragging it
+  shows the grayscale crop and dithers on release.
+- **Upload:** every pixel exactly 0 or 255 with alpha 255, then `canvas.toBlob(…, "image/png")`, sent
+  with the name (by default the file name) to `POST /api/frames`.
+- `dither.js` works on plain arrays and knows nothing about the DOM, so the editor's photo import
+  reuses it (D21).
+
+**Why:** what the preview shows is exactly what the frame shows. Dithering an 800×480 crop takes a few
+milliseconds, so the sliders can re-dither on every animation frame.
+
 ## Guiding principle
 
 Prefer doing a few things well over supporting many features or edge cases. When in doubt,

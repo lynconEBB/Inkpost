@@ -12,9 +12,24 @@ export function showSuccess(text) {
 	hideTimer = setTimeout(clearMessage, CONFIRMATION_MS);
 }
 
-/** Shows an error in the message area, until the next message or until it's dismissed. */
+/** Shows an error, or a text, in the message area until the next message or until it's dismissed. */
 export function showError(error) {
-	show(errorText(error), "error");
+	show(typeof error === "string" ? error : errorText(error), "error");
+}
+
+/**
+ * Shows what went wrong with a form's request: a 400's field errors under their sections, and anything
+ * else in the message area.
+ */
+export function showFormError(root, error) {
+	if (!(error instanceof ApiError) || error.errors.length === 0) {
+		showError(error);
+		return;
+	}
+	const unplaced = showFieldErrors(root, error.errors);
+	if (unplaced.length > 0) {
+		showError(unplaced.map((e) => `${e.field}: ${e.message}`).join("\n"));
+	}
 }
 
 export function clearMessage() {
