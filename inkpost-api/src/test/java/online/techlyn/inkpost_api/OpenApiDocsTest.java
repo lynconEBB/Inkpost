@@ -36,7 +36,17 @@ class OpenApiDocsTest {
 				.andExpect(jsonPath("$.paths['/api/rules/{id}'].put").exists())
 				.andExpect(jsonPath("$.paths['/api/rules/{id}'].delete").exists())
 				.andExpect(jsonPath("$.paths['/api/rules/{id}/move'].post").exists())
-				.andExpect(jsonPath("$.paths['/api/timeline'].get").exists());
+				.andExpect(jsonPath("$.paths['/api/timeline'].get").exists())
+				.andExpect(jsonPath("$.paths['/device/image'].get").exists())
+				.andExpect(jsonPath("$.paths['/api/device'].get").exists());
+	}
+
+	@Test
+	void theDeviceImageTakesTheKeySoSwaggerUiCanSendIt() throws Exception {
+		mockMvc.perform(get("/v3/api-docs"))
+				.andExpect(jsonPath("$.components.securitySchemes.deviceKey.scheme").value("bearer"))
+				.andExpect(jsonPath("$.paths['/device/image'].get.security[0].deviceKey").exists())
+				.andExpect(jsonPath("$.paths['/api/device'].get.security").doesNotExist());
 	}
 
 	@Test

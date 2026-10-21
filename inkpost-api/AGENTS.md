@@ -8,9 +8,10 @@ Spring Boot app that serves the frame's images and the web UI. Read the root `AG
 The JDK is pinned with mise (`mise.toml`, Temurin 27). Run Gradle through it:
 
 - `mise exec -- ./gradlew test`
-- `mise exec -- ./gradlew bootRun`, then:
+- `mise exec -- ./gradlew bootRun`, with the device key (D8) in `INKPOST_DEVICE_KEY`: the app doesn't
+  start without it (tests set their own in `src/test/resources/config/`). Then:
   - `/actuator/health`: health check
-  - `/swagger-ui.html`: API docs (springdoc)
+  - `/swagger-ui.html`: API docs (springdoc); "Authorize" with the device key to call `/device/image`
 
 ## Layering: controller → service → repository
 

@@ -57,7 +57,7 @@ last stored ID in `If-None-Match`; if the image is unchanged the server replies 
 with no body and the firmware goes straight back to sleep without refreshing the panel.
 
 ```
-GET /image
+GET /device/image
 Authorization: Bearer <key>
 If-None-Match: "<last-id>"        (omitted if no ID stored)
 
@@ -180,7 +180,7 @@ can be packed into the 48000-byte format, and frames can be scheduled for displa
 
 ### D16. Web UI protected by Cloudflare Access
 Cloudflare Access (email login) sits in front of the web UI; no auth code in Spring.
-The device endpoint is excluded from Access and protected only by the API key (D8).
+The device endpoints (`/device/**`, D41) are excluded from Access and protected only by the API key (D8).
 The device endpoint sends `Cache-Control: no-store` so Cloudflare never caches it.
 **Why:** simplest option; no login system to build.
 
