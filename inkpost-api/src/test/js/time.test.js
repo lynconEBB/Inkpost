@@ -7,8 +7,11 @@ import {
 	blocksOfHours,
 	blockTime,
 	endToUntil,
+	formatAgo,
 	formatDay,
 	formatTime,
+	formatWeek,
+	formatWhen,
 	hoursOfBlock,
 	hoursOfBlocks,
 	localOf,
@@ -159,6 +162,29 @@ describe("formats", () => {
 		assert.equal(formatDay(new Date("2026-10-21T02:00:00Z")), "Tue 20 Oct");
 		assert.equal(formatDay(brasilia("2026-10-21T15:00:00")), "Wed 21 Oct");
 		assert.equal(formatTime(new Date("2026-10-21T18:01:00Z")), "15:01");
+	});
+
+	test("name a week by its days, with the month and year once", () => {
+		assert.equal(formatWeek("2026-10-19"), "19 – 25 Oct 2026");
+		assert.equal(formatWeek("2026-10-26"), "26 Oct – 1 Nov 2026");
+		assert.equal(formatWeek("2026-12-28"), "28 Dec 2026 – 3 Jan 2027");
+	});
+
+	test("say when, with the day only when it isn't today", () => {
+		const now = brasilia("2026-10-21T17:00:00");
+		assert.equal(formatWhen(brasilia("2026-10-21T15:01:00"), now), "15:01");
+		assert.equal(formatWhen(brasilia("2026-10-21T00:01:00"), now), "00:01");
+		assert.equal(formatWhen(brasilia("2026-10-20T21:01:00"), now), "Tue 20 Oct 21:01");
+	});
+
+	test("say how long ago", () => {
+		const now = brasilia("2026-10-21T17:00:00");
+		assert.equal(formatAgo(brasilia("2026-10-21T16:59:30"), now), "just now");
+		assert.equal(formatAgo(brasilia("2026-10-21T16:55:00"), now), "5 min ago");
+		assert.equal(formatAgo(brasilia("2026-10-21T15:01:00"), now), "1 h ago");
+		assert.equal(formatAgo(brasilia("2026-10-21T14:59:00"), now), "2 h ago");
+		assert.equal(formatAgo(brasilia("2026-10-20T15:00:00"), now), "1 day ago");
+		assert.equal(formatAgo(brasilia("2026-10-18T15:00:00"), now), "3 days ago");
 	});
 
 	test("use the 24-hour clock", () => {

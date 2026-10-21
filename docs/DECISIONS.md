@@ -288,9 +288,19 @@ higher rules; its costs (no exact preview of the future, a frame lost on a rare 
 for a gift.
 
 ### D39. Schedule timeline: one track per rule; the server computes, the page only draws
-The web UI shows the schedule as tracks, like a video editor: one track per rule in priority order,
-the highest on top, so an upper track shows over the lower ones. A row above the tracks shows what
-is on air. Where a rule covers an hour but a higher rule wins, its track is hatched.
+The web UI shows the schedule a week at a time, Monday 00:00 to the next Monday 00:00, with **days as
+rows**, so it scrolls vertically and fits a phone without scrolling sideways. Each day has 24 hour
+columns, labeled every 3 hours, and tracks like a video editor's:
+- an **on air** row, in the color of the rule that wins each hour;
+- one track per rule that covers part of that day, highest first, so an upper track shows over the
+  lower ones. A track is solid where its rule is on air, and hatched where it covers the hour but a
+  higher rule wins. Rule names sit in a label column, cut short on phones.
+
+Tapping a track opens its rule. Today is marked, with a line at the current time. On a desktop the
+days scroll inside the timeline, which opens on today; on a phone the page itself scrolls, so it opens
+at the top, with the "now on the frame" card first, and the "Today" button goes to today.
+Brasília has no daylight saving time (D27), so day *k* of a range starts at `from + k × 24 h`
+(`timeline-days.js`).
 
 ```
 GET /api/timeline?from=2026-10-19T00:00:00&to=2026-10-26T00:00:00
@@ -327,7 +337,8 @@ GET /api/timeline?from=2026-10-19T00:00:00&to=2026-10-26T00:00:00
 - `version` is a counter incremented on every rule change (create, edit, delete, reorder, frame
   list). A response with a different version drops everything loaded and reloads the visible range.
   Device requests don't change it: the timeline shows sets of frames, not the exact frame (D38).
-- Rule colors come from a palette by rule id; they are not stored.
+- Rule colors come from a palette of 8 by rule id (`colors.js`), with the default rule always gray;
+  they are not stored. The rule list uses the same colors.
 
 "Now on the frame" card: `GET /api/device` returns the last device request (time, rule, frame),
 written in the same transaction that advances the rotation (D38). With no request for more than
@@ -471,6 +482,4 @@ pick the option with fewer cases to handle.
 ## Open questions
 
 - Which font and which 3 sizes (prototype).
-- Timeline layout (D39): days as rows with the 8 blocks as columns (fits a phone), or horizontal
-  tracks (desktop)?
 - Backups of the SQLite file (D40).

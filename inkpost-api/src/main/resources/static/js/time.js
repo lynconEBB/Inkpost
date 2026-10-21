@@ -20,6 +20,8 @@ export const BLOCKS = 8;
 
 const dayFormat = new Intl.DateTimeFormat("en-GB", { timeZone: ZONE, weekday: "short", day: "numeric", month: "short" });
 const timeFormat = new Intl.DateTimeFormat("en-GB", { timeZone: ZONE, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+const dayMonthFormat = new Intl.DateTimeFormat("en-GB", { timeZone: ZONE, day: "numeric", month: "short" });
+const dayMonthYearFormat = new Intl.DateTimeFormat("en-GB", { timeZone: ZONE, day: "numeric", month: "short", year: "numeric" });
 
 /** The local date-time of an instant, to the second. */
 export function toLocal(instant) {
@@ -121,6 +123,42 @@ export function formatDay(instant) {
 /** 15:01, on the 24-hour clock */
 export function formatTime(instant) {
 	return timeFormat.format(instant);
+}
+
+/** The week starting on a Monday: "19 – 25 Oct 2026", "26 Oct – 1 Nov 2026", "28 Dec 2026 – 3 Jan 2027". */
+export function formatWeek(monday) {
+	const sunday = addDays(monday, 6);
+	const end = dayMonthYearFormat.format(toInstant(sunday));
+	if (monday.slice(0, 4) !== sunday.slice(0, 4)) {
+		return `${dayMonthYearFormat.format(toInstant(monday))} – ${end}`;
+	}
+	if (monday.slice(0, 7) !== sunday.slice(0, 7)) {
+		return `${dayMonthFormat.format(toInstant(monday))} – ${end}`;
+	}
+	return `${Number(monday.slice(8, 10))} – ${end}`;
+}
+
+/** "15:01" today, "Tue 20 Oct 15:01" on another day. */
+export function formatWhen(instant, now = new Date()) {
+	const time = formatTime(instant);
+	return today(instant) === today(now) ? time : `${formatDay(instant)} ${time}`;
+}
+
+/** "just now", "5 min ago", "2 h ago", "3 days ago" */
+export function formatAgo(instant, now = new Date()) {
+	const minutes = Math.floor((now - instant) / 60000);
+	if (minutes < 1) {
+		return "just now";
+	}
+	if (minutes < 60) {
+		return `${minutes} min ago`;
+	}
+	const hours = Math.floor(minutes / 60);
+	if (hours < 24) {
+		return `${hours} h ago`;
+	}
+	const days = Math.floor(hours / 24);
+	return days === 1 ? "1 day ago" : `${days} days ago`;
 }
 
 export function pad(number) {

@@ -7,6 +7,23 @@
 	<h1 class="visually-hidden">Schedule</h1>
 	<div class="schedule">
 		<div class="schedule__side">
+			<section class="card now" aria-labelledby="now-title">
+				<h2 id="now-title">Now on the frame</h2>
+				<p class="muted" id="now-loading">Loading…</p>
+				<div class="now__body" id="now-body" hidden>
+					<img class="thumb" id="now-image" width="800" height="480" alt="What the frame shows now" hidden>
+					<div class="thumb thumb--placeholder" id="now-placeholder"></div>
+					<div class="now__text">
+						<p class="now__rule" id="now-rule" hidden>
+							<span class="swatch" aria-hidden="true"></span>
+							<span id="now-rule-name"></span>
+						</p>
+						<p class="now__status" id="now-status"></p>
+						<p class="hint" id="now-next" hidden></p>
+					</div>
+				</div>
+			</section>
+
 			<section class="card" aria-labelledby="rules-title">
 				<div class="section-title">
 					<h2 id="rules-title">Rules</h2>
@@ -23,6 +40,24 @@
 				<ol class="rule-list" id="rule-list" aria-label="Rules, highest first"></ol>
 			</section>
 		</div>
+
+		<section class="card timeline" aria-labelledby="week-label">
+			<div class="timeline__header">
+				<div class="week-nav">
+					<button type="button" class="button button--icon" id="previous-week" aria-label="Previous week">◀</button>
+					<h2 class="week-nav__label" id="week-label">
+						<span class="visually-hidden">Timeline,</span> <span id="week-range"></span>
+					</h2>
+					<button type="button" class="button button--icon" id="next-week" aria-label="Next week">▶</button>
+				</div>
+				<button type="button" class="button" id="this-week">Today</button>
+			</div>
+			<p class="hint timeline__legend">
+				<span class="legend-sample segment--solid" aria-hidden="true"></span> On air
+				<span class="legend-sample segment--hatched" aria-hidden="true"></span> Covered, but a higher rule wins
+			</p>
+			<ol class="days" id="days" aria-label="Days of the week"></ol>
+		</section>
 	</div>
 </main>
 
@@ -40,6 +75,44 @@
 			<button type="button" class="button button--danger" data-action="delete">Delete</button>
 		</div>
 	</li>
+</template>
+
+<!-- A day of the timeline (D39): the hours every 3 hours, what's on air, then one track per rule. -->
+<template id="timeline-day">
+	<li class="day">
+		<div class="day__header">
+			<h3 class="day__label-box">
+				<span class="day__label"></span>
+				<span class="day__today" hidden>Today</span>
+			</h3>
+			<div class="day__hours" aria-hidden="true">
+				<span>00</span><span>03</span><span>06</span><span>09</span><span>12</span><span>15</span><span>18</span><span>21</span>
+			</div>
+		</div>
+		<div class="day__row day__row--air">
+			<span class="day__name">On air</span>
+			<div class="bar" aria-hidden="true"></div>
+			<span class="visually-hidden">On air: <span class="day__air-text"></span></span>
+		</div>
+		<ol class="day__tracks"></ol>
+	</li>
+</template>
+
+<template id="timeline-track">
+	<li>
+		<a class="day__row track">
+			<span class="day__name"></span>
+			<span class="bar"></span>
+		</a>
+	</li>
+</template>
+
+<template id="timeline-segment">
+	<span class="segment"></span>
+</template>
+
+<template id="timeline-now">
+	<span class="now-line"></span>
 </template>
 
 <script type="module" th:src="@{/js/schedule.js}"></script>
