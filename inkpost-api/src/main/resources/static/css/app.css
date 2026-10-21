@@ -551,6 +551,94 @@ a {
 	margin-right: auto;
 }
 
+/* ---------- Frame images ---------- */
+
+/* A frame's 5:3 shape, whatever the width. */
+.thumb {
+	display: block;
+	width: 100%;
+	height: auto;
+	aspect-ratio: 5 / 3;
+	object-fit: cover;
+	border: 1px solid var(--color-border);
+	border-radius: calc(var(--radius) / 2);
+	background: #ffffff;
+}
+
+.thumb--placeholder {
+	display: grid;
+	place-items: center;
+	padding: var(--space-2);
+	background: repeating-linear-gradient(135deg, #ffffff 0 0.5rem, var(--color-bg) 0.5rem 1rem);
+	color: var(--color-muted);
+	font-size: var(--font-size-sm);
+	text-align: center;
+}
+
+.frame-image {
+	width: 100%;
+	height: auto;
+	border: 1px solid var(--color-border);
+	background: #ffffff;
+}
+
+.dialog__body--image {
+	display: grid;
+	place-items: center;
+	background: var(--color-bg);
+}
+
+/* ---------- Frames page ---------- */
+
+.empty {
+	display: grid;
+	justify-items: start;
+	gap: var(--space-3);
+}
+
+.frame-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+	gap: var(--space-3);
+	padding: 0;
+	list-style: none;
+}
+
+.frame-card {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+	padding: var(--space-2);
+}
+
+.frame-card__thumb {
+	display: block;
+	padding: 0;
+	border: 0;
+	border-radius: calc(var(--radius) / 2);
+	background: none;
+	cursor: zoom-in;
+}
+
+.frame-card__name {
+	font-size: var(--font-size-base);
+	overflow-wrap: anywhere;
+}
+
+.frame-card__usage {
+	flex: 1;
+}
+
+.frame-card__actions {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr));
+	gap: var(--space-2);
+}
+
+.frame-card__actions .button {
+	padding: 0 var(--space-2);
+}
+
 /* ---------- Large phones and tablets ---------- */
 
 @media (min-width: 40rem) {

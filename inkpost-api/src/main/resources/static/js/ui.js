@@ -99,6 +99,21 @@ export async function busy(button, task) {
 	}
 }
 
+/**
+ * Closes a <dialog> from its [data-close] buttons, and from a click on the backdrop (there is one only
+ * from 40rem, D43). A modal dialog covers the message area, so errors while it's open go inside it.
+ */
+export function initDialog(dialog) {
+	for (const button of dialog.querySelectorAll("[data-close]")) {
+		button.addEventListener("click", () => dialog.close());
+	}
+	dialog.addEventListener("click", (event) => {
+		if (event.target === dialog) {
+			dialog.close();
+		}
+	});
+}
+
 /** A copy of a <template>'s element, so the pages build no HTML strings (D42). */
 export function clone(templateId) {
 	return document.getElementById(templateId).content.firstElementChild.cloneNode(true);
