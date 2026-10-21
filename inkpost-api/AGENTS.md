@@ -8,18 +8,45 @@ Spring Boot app that serves the frame's images and the web UI. Read the root `AG
 The JDK is pinned with mise (`mise.toml`, Temurin 27). Run Gradle through it:
 
 - `mise exec -- ./gradlew test`
-- `mise exec -- ./gradlew bootRun`, then:
+- `mise exec -- ./gradlew bootRun`, with the device key (D8) in `INKPOST_DEVICE_KEY`: the app doesn't
+  start without it. Tests fall back to a key in `src/test/resources/config/`, and send whichever key is
+  configured. Then:
   - `/actuator/health`: health check
-  - `/swagger-ui.html`: API docs (springdoc)
+  - `/swagger-ui.html`: API docs (springdoc); "Authorize" with the device key to call `/api/image`
 
 ## Layering: controller → service → repository
 
 - **Controllers** only do HTTP: bind params, call one service, build the response (status, headers,
   content type). No logic.
-- **Services** do the work.
+- **Services** do the work, and report failures with the shared exceptions in `common/exception/`
+  (`NotFoundException`, `ConflictException`, `InvalidInputException`), which
+  `config/ApiExceptionHandler` turns into Problem Details (D41).
 - **Repositories** handle persistence. Add them only once something is stored.
-- Code is grouped by feature (`display/`, …). Cross-cutting setup lives in `config/`.
 - OpenAPI annotations belong on controllers.
+
+## Packages: domain first, then layer
+
+Code is grouped by domain (`frame/`, `schedule/`, `testimage/`), and inside each domain by layer:
+
+| package | contents |
+|---|---|
+| `controller` | `@RestController`s |
+| `service` | `@Service`s, and the plain logic classes they use |
+| `repository` | Spring Data repositories |
+| `entity` | JPA entities |
+| `dto` | request and response bodies (records) |
+| `model` | domain types that aren't stored: value objects, enums (`MonoBitmap`, `TestPattern`) |
+
+- Package names are singular. Create a layer package only when it gets its first class; add other
+  layers (e.g. `exception`) the same way when needed.
+- Cross-cutting setup lives in the top-level `config/`.
+- Code every domain shares lives in the top-level `common/`, by kind (`common/exception/`).
+- Tests mirror the package of the class they test.
+
+## Time
+
+Every "now" comes from the `Clock` bean (`config/ClockConfig`, in `inkpost.timezone`, Brasília,
+D27), never from `LocalDateTime.now()`, so tests can fix it.
 
 ## Persistence (D40)
 
@@ -37,7 +64,7 @@ The JDK is pinned with mise (`mise.toml`, Temurin 27). Run Gradle through it:
 
 ## Display format
 
-`display/MonoBitmap` is the only place that knows the 48000-byte packing (D4). Reuse it, don't
+`frame/model/MonoBitmap` is the only place that knows the 48000-byte packing (D4). Reuse it, don't
 re-implement it.
 
 ## Git

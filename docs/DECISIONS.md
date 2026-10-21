@@ -57,7 +57,7 @@ last stored ID in `If-None-Match`; if the image is unchanged the server replies 
 with no body and the firmware goes straight back to sleep without refreshing the panel.
 
 ```
-GET /image
+GET /api/image
 Authorization: Bearer <key>
 If-None-Match: "<last-id>"        (omitted if no ID stored)
 
@@ -180,7 +180,7 @@ can be packed into the 48000-byte format, and frames can be scheduled for displa
 
 ### D16. Web UI protected by Cloudflare Access
 Cloudflare Access (email login) sits in front of the web UI; no auth code in Spring.
-The device endpoint is excluded from Access and protected only by the API key (D8).
+The device endpoint (`GET /api/image`, D41) is excluded from Access and protected only by the API key (D8).
 The device endpoint sends `Cache-Control: no-store` so Cloudflare never caches it.
 **Why:** simplest option; no login system to build.
 
@@ -293,23 +293,25 @@ the highest on top, so an upper track shows over the lower ones. A row above the
 is on air. Where a rule covers an hour but a higher rule wins, its track is hatched.
 
 ```
-GET /api/timeline?from=2026-10-19T00:00&to=2026-10-26T00:00
+GET /api/timeline?from=2026-10-19T00:00:00&to=2026-10-26T00:00:00
 
 {
   "version": 42,
   "rules": [
-    { "id": 7, "name": "Trip", "priority": 2, "frames": [12, 15],
-      "covers": [ { "start": "2026-10-21T00:00-03:00", "end": "2026-10-23T00:00-03:00" } ] },
-    { "id": 1, "name": "Default", "priority": 0, "frames": [1, 2, 3],
-      "covers": [ { "start": "2026-10-19T00:00-03:00", "end": "2026-10-26T00:00-03:00" } ] }
+    { "id": 7, "name": "Trip", "priority": 2, "isDefault": false, "frameIds": [12, 15],
+      "covers": [ { "start": "2026-10-21T00:00:00-03:00", "end": "2026-10-23T00:00:00-03:00" } ] },
+    { "id": 1, "name": "Default", "priority": 0, "isDefault": true, "frameIds": [1, 2, 3],
+      "covers": [ { "start": "2026-10-19T00:00:00-03:00", "end": "2026-10-26T00:00:00-03:00" } ] }
   ],
   "onAir": [
-    { "start": "2026-10-19T00:00-03:00", "end": "2026-10-21T00:00-03:00", "ruleId": 1 },
-    { "start": "2026-10-21T00:00-03:00", "end": "2026-10-23T00:00-03:00", "ruleId": 7 },
-    { "start": "2026-10-23T00:00-03:00", "end": "2026-10-26T00:00-03:00", "ruleId": 1 }
+    { "start": "2026-10-19T00:00:00-03:00", "end": "2026-10-21T00:00:00-03:00", "ruleId": 1 },
+    { "start": "2026-10-21T00:00:00-03:00", "end": "2026-10-23T00:00:00-03:00", "ruleId": 7 },
+    { "start": "2026-10-23T00:00:00-03:00", "end": "2026-10-26T00:00:00-03:00", "ruleId": 1 }
   ]
 }
 ```
+
+`from` and `to` are whole hours, `from < to`, at most 62 days apart (otherwise `400`, D41).
 
 - `rules`: the rules that cover at least one hour of the range, highest priority first. `covers`
   is what each one covers; `onAir` is which rule wins. Both are computed with the same code the
@@ -355,6 +357,27 @@ migrations create or change the schema; Hibernate just validates it at startup.
 - Tests run against a fresh in-memory database per Spring context, migrated by Flyway.
 **Why:** one user and little data (a thousand frames is about 48 MB). A backup is a copy of one
 file, and tests need no Docker. Postgres would add a server to run, dumps and Testcontainers.
+
+### D41. REST API conventions
+- Every endpoint is under `/api/`. All are the web UI's, behind Cloudflare Access (D16) with no auth
+  in the app, except `GET /api/image`, the frame's: Access excludes that one path, and the app checks
+  the device key on it (D8).
+- JSON in and out. Date-times in requests are Brasília local time without an offset
+  (`2026-10-21T15:00:00`); in responses they carry the offset (`2026-10-21T15:00:00-03:00`), so a
+  page never has to guess the zone (D27).
+- Errors are RFC 9457 Problem Details (`application/problem+json`): `400` invalid input, with an
+  `errors` array of `{ "field", "message" }`; `404` unknown ID; `409` conflicts with the current
+  state (e.g. deleting a frame a rule uses, D27); `413` upload too large. Bean Validation checks
+  shapes, services check domain rules, and both produce the same `400`.
+- Lists, not bitmasks: a rule's hours, days of the month, months and weekdays are lists of values
+  in the API (`"weekdays": [6, 7]`). In a request, a missing or null list means every value; in a
+  response, every value is always listed. The bitmasks (D38) are only how they are stored.
+- Strict PNG upload: a frame is uploaded as a PNG of exactly 800×480 where every pixel is opaque
+  pure black (`#000000`) or pure white (`#FFFFFF`). Anything else is a `400` naming the problem
+  (e.g. the first wrong pixel). The server never thresholds or dithers. Uploads are capped at 2 MB.
+**Why:** one error shape for every page to show. Lists say what they mean, and the bit layout stays
+in one place. A server that fixed up images would show something the editor didn't preview; the
+browser is the only renderer (D19).
 
 ## Guiding principle
 
