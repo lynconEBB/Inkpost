@@ -38,3 +38,6 @@ out/
 
 ### SQLite database (D40) ###
 /inkpost.db*
+
+### Local mise settings, e.g. INKPOST_DEVICE_KEY ###
+/mise.local.toml
