@@ -18,6 +18,7 @@ import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
@@ -26,11 +27,15 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import tools.jackson.core.JacksonException;
 
 /**
- * Turns every error into RFC 9457 Problem Details (D41). The base class covers Spring's own exceptions
- * (e.g. {@code 413} for a too large upload). Every {@code 400} has an {@code errors} array of
- * {@code { field, message }}, whether it comes from Bean Validation, request binding or a service.
+ * Turns every error of the API's {@code @RestController}s into RFC 9457 Problem Details (D41). The base
+ * class covers Spring's own exceptions (e.g. {@code 413} for a too large upload). Every {@code 400} has an
+ * {@code errors} array of {@code { field, message }}, whether it comes from Bean Validation, request
+ * binding or a service.
+ * <p>
+ * The pages' {@code @Controller}s are left out, so their errors, like unknown URLs, get Boot's error page,
+ * {@code templates/error.html} (D42).
  */
-@RestControllerAdvice
+@RestControllerAdvice(annotations = RestController.class)
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
 	@ExceptionHandler

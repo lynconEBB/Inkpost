@@ -42,6 +42,17 @@ class OpenApiDocsTest {
 	}
 
 	@Test
+	void leavesOutThePages() throws Exception {
+		mockMvc.perform(get("/v3/api-docs"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.paths['/']").doesNotExist())
+				.andExpect(jsonPath("$.paths['/rules/new']").doesNotExist())
+				.andExpect(jsonPath("$.paths['/rules/{id}']").doesNotExist())
+				.andExpect(jsonPath("$.paths['/frames']").doesNotExist())
+				.andExpect(jsonPath("$.paths['/frames/new']").doesNotExist());
+	}
+
+	@Test
 	void theDeviceImageTakesTheKeySoSwaggerUiCanSendIt() throws Exception {
 		mockMvc.perform(get("/v3/api-docs"))
 				.andExpect(jsonPath("$.components.securitySchemes.deviceKey.scheme").value("bearer"))

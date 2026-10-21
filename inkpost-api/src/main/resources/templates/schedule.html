@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Schedule')}"></head>
+<body>
+<th:block th:replace="~{layout :: header('schedule')}"></th:block>
+<main class="page">
+	<h1 class="visually-hidden">Schedule</h1>
+</main>
+<script type="module" th:src="@{/js/schedule.js}"></script>
+</body>
+</html>

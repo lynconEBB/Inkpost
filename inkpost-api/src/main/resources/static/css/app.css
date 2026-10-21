@@ -1,0 +1,586 @@
+/*
+ * inkpost's only stylesheet, hand-written (D42). Phone first (D43): the base rules are the phone layout,
+ * then two breakpoints: 40rem for large phones and tablets, 64rem for desktops.
+ */
+
+/* ---------- Variables ---------- */
+
+:root {
+	--color-bg: #f4f3ef;
+	--color-surface: #ffffff;
+	--color-text: #1d1d1b;
+	--color-muted: #5c5b57;
+	--color-border: #d6d3cb;
+	--color-accent: #1d4ed8;
+	--color-accent-hover: #1e40af;
+	--color-on-accent: #ffffff;
+	--color-danger: #b42318;
+	--color-danger-bg: #fef3f2;
+	--color-success: #05603a;
+	--color-success-bg: #ecfdf3;
+	--color-warning-bg: #fffaeb;
+	--color-warning-border: #dc9f0c;
+	--color-focus: #1d4ed8;
+
+	--space-1: 0.25rem;
+	--space-2: 0.5rem;
+	--space-3: 0.75rem;
+	--space-4: 1rem;
+	--space-5: 1.5rem;
+	--space-6: 2rem;
+
+	--font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	--font-size-xs: 0.75rem;
+	--font-size-sm: 0.875rem;
+	--font-size-base: 1rem;
+	--font-size-lg: 1.125rem;
+	--font-size-xl: 1.5rem;
+	/* iOS zooms in on focus into an input smaller than 16 px. */
+	--font-size-input: max(1rem, 16px);
+
+	--radius: 0.5rem;
+	--tap: 2.75rem; /* 44 px, the smallest tap target */
+	--page-width: 72rem;
+	--gutter: 1rem;
+	--shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 1px 3px rgb(0 0 0 / 0.08);
+}
+
+/* ---------- Base ---------- */
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	-webkit-text-size-adjust: 100%;
+	text-size-adjust: 100%;
+}
+
+body {
+	margin: 0;
+	min-height: 100dvh;
+	background: var(--color-bg);
+	color: var(--color-text);
+	font-family: var(--font-family);
+	font-size: var(--font-size-base);
+	line-height: 1.5;
+	overflow-wrap: break-word;
+}
+
+img,
+canvas {
+	display: block;
+	max-width: 100%;
+}
+
+img {
+	height: auto;
+}
+
+h1,
+h2,
+h3,
+p,
+ul,
+ol,
+fieldset {
+	margin: 0;
+}
+
+h1,
+h2,
+h3 {
+	line-height: 1.25;
+}
+
+h1 {
+	font-size: var(--font-size-xl);
+}
+
+h2 {
+	font-size: var(--font-size-lg);
+}
+
+h3 {
+	font-size: var(--font-size-base);
+}
+
+a {
+	color: var(--color-accent);
+}
+
+:focus-visible {
+	outline: 3px solid var(--color-focus);
+	outline-offset: 2px;
+}
+
+/* Wins over any display set by a class. */
+[hidden] {
+	display: none !important;
+}
+
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+.muted {
+	color: var(--color-muted);
+}
+
+.hint {
+	color: var(--color-muted);
+	font-size: var(--font-size-sm);
+}
+
+.stack {
+	display: grid;
+	gap: var(--space-4);
+}
+
+/* ---------- Header and nav ---------- */
+
+.site-header {
+	background: var(--color-surface);
+	border-bottom: 1px solid var(--color-border);
+}
+
+.site-header__inner {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	max-width: var(--page-width);
+	min-height: 3.5rem;
+	margin: 0 auto;
+	padding: 0 var(--gutter);
+}
+
+.site-header__brand {
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--tap);
+	color: var(--color-text);
+	font-size: var(--font-size-lg);
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.site-nav {
+	display: flex;
+	gap: var(--space-1);
+}
+
+.site-nav__link {
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--tap);
+	padding: 0 var(--space-3);
+	border-radius: var(--radius);
+	color: var(--color-text);
+	text-decoration: none;
+}
+
+.site-nav__link:hover {
+	background: var(--color-bg);
+}
+
+.site-nav__link[aria-current="page"] {
+	font-weight: 600;
+	text-decoration: underline;
+	text-decoration-thickness: 2px;
+	text-underline-offset: 0.4em;
+}
+
+/* ---------- Page ---------- */
+
+.page {
+	max-width: var(--page-width);
+	margin: 0 auto;
+	padding: var(--space-4) var(--gutter) var(--space-6);
+}
+
+.page--narrow {
+	max-width: calc(48rem + 2 * var(--gutter));
+}
+
+.page-title {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3);
+	margin-bottom: var(--space-4);
+}
+
+.section-title {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-2);
+	margin-bottom: var(--space-3);
+}
+
+/* ---------- Buttons ---------- */
+
+.button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-2);
+	min-width: var(--tap);
+	min-height: var(--tap);
+	padding: 0 var(--space-4);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	background: var(--color-surface);
+	color: var(--color-text);
+	font: inherit;
+	font-weight: 500;
+	line-height: 1.2;
+	text-align: center;
+	text-decoration: none;
+	cursor: pointer;
+	touch-action: manipulation;
+}
+
+.button:not(:disabled):hover {
+	background: var(--color-bg);
+}
+
+.button--primary {
+	border-color: var(--color-accent);
+	background: var(--color-accent);
+	color: var(--color-on-accent);
+}
+
+.button--primary:not(:disabled):hover {
+	border-color: var(--color-accent-hover);
+	background: var(--color-accent-hover);
+}
+
+.button--danger {
+	color: var(--color-danger);
+}
+
+.button--danger:not(:disabled):hover {
+	background: var(--color-danger-bg);
+}
+
+.button--icon {
+	padding: 0;
+	font-size: var(--font-size-lg);
+}
+
+.button--plain {
+	border-color: transparent;
+	background: transparent;
+}
+
+.button:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+.button[aria-busy="true"] {
+	cursor: progress;
+}
+
+.button[aria-pressed="true"] {
+	border-color: var(--color-text);
+	background: var(--color-text);
+	color: var(--color-surface);
+}
+
+.button-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+}
+
+/* ---------- Inputs ---------- */
+
+.field {
+	display: grid;
+	gap: var(--space-1);
+}
+
+.label {
+	font-weight: 600;
+}
+
+.input,
+.select {
+	width: 100%;
+	min-height: var(--tap);
+	padding: var(--space-2) var(--space-3);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	background: var(--color-surface);
+	color: var(--color-text);
+	font: inherit;
+	font-size: var(--font-size-input);
+}
+
+.range {
+	width: 100%;
+	min-height: var(--tap);
+	margin: 0;
+	accent-color: var(--color-accent);
+}
+
+.field-error {
+	color: var(--color-danger);
+	font-size: var(--font-size-sm);
+	font-weight: 500;
+	white-space: pre-line;
+}
+
+.field-error::before {
+	content: "⚠ ";
+}
+
+/* ---------- Chips: checkboxes with labels ---------- */
+
+.chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+	padding: 0;
+	list-style: none;
+}
+
+.chip {
+	position: relative;
+	display: flex;
+}
+
+/* Invisible but still there, so the chip is focusable and toggles like a checkbox. */
+.chip__input {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	opacity: 0;
+	cursor: pointer;
+}
+
+.chip__label {
+	display: inline-flex;
+	flex: 1;
+	align-items: center;
+	justify-content: center;
+	gap: 0.125rem;
+	min-width: var(--tap);
+	min-height: var(--tap);
+	padding: 0 var(--space-3);
+	border: 1px solid var(--color-border);
+	border-radius: 999px;
+	background: var(--color-surface);
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.chip__input:checked + .chip__label {
+	border-color: var(--color-accent);
+	background: var(--color-accent);
+	color: var(--color-on-accent);
+	font-weight: 600;
+}
+
+/* A check mark too, so color isn't the only cue. */
+.chip__input:checked + .chip__label::before {
+	content: "✓";
+}
+
+.chip__input:focus-visible + .chip__label {
+	outline: 3px solid var(--color-focus);
+	outline-offset: 2px;
+}
+
+/* ---------- Cards ---------- */
+
+.card {
+	padding: var(--space-4);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	background: var(--color-surface);
+	box-shadow: var(--shadow);
+}
+
+.warning {
+	padding: var(--space-3) var(--space-4);
+	border: 1px solid var(--color-warning-border);
+	border-left-width: 4px;
+	border-radius: var(--radius);
+	background: var(--color-warning-bg);
+}
+
+.warning::before {
+	content: "⚠ ";
+}
+
+/* ---------- Dialogs: full screen on phones ---------- */
+
+.dialog {
+	width: 100%;
+	max-width: 100%;
+	height: 100dvh;
+	max-height: 100dvh;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: var(--color-surface);
+	color: var(--color-text);
+}
+
+.dialog[open] {
+	display: flex;
+	flex-direction: column;
+}
+
+.dialog::backdrop {
+	background: rgb(0 0 0 / 0.5);
+}
+
+.dialog__form {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	min-height: 0;
+}
+
+.dialog__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3);
+	padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+	border-bottom: 1px solid var(--color-border);
+}
+
+.dialog__body {
+	flex: 1;
+	overflow-y: auto;
+	padding: var(--space-4);
+}
+
+.dialog__footer {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: var(--space-2);
+	padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+	border-top: 1px solid var(--color-border);
+}
+
+/* ---------- Message area ---------- */
+
+.messages {
+	position: sticky;
+	top: 0;
+	z-index: 20;
+	max-width: var(--page-width);
+	margin: 0 auto;
+	padding: 0 var(--gutter);
+}
+
+.message {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--space-2);
+	margin-top: var(--space-2);
+	padding: var(--space-1) var(--space-1) var(--space-1) var(--space-4);
+	border: 1px solid;
+	border-left-width: 4px;
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+}
+
+.message__text {
+	flex: 1;
+	padding: var(--space-2) 0;
+}
+
+.message--error {
+	border-color: var(--color-danger);
+	background: var(--color-danger-bg);
+}
+
+.message--error .message__text::before {
+	content: "⚠ ";
+}
+
+.message--success {
+	border-color: var(--color-success);
+	background: var(--color-success-bg);
+}
+
+.message--success .message__text::before {
+	content: "✓ ";
+}
+
+/* ---------- Sticky action bar: the main action stays in reach on phones ---------- */
+
+.action-bar {
+	position: sticky;
+	bottom: 0;
+	z-index: 10;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: var(--space-2);
+	margin: var(--space-5) calc(-1 * var(--gutter)) 0;
+	padding: var(--space-3) var(--gutter) calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+	border-top: 1px solid var(--color-border);
+	background: var(--color-surface);
+}
+
+/* Pushes what follows to the right, e.g. Delete on the left and Save on the right. */
+.action-bar__start {
+	margin-right: auto;
+}
+
+/* ---------- Large phones and tablets ---------- */
+
+@media (min-width: 40rem) {
+	.dialog {
+		width: min(40rem, 100% - 2rem);
+		height: auto;
+		max-height: calc(100dvh - 4rem);
+		margin: auto;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		box-shadow: 0 10px 30px rgb(0 0 0 / 0.2);
+	}
+
+	.dialog--wide {
+		width: min(60rem, 100% - 2rem);
+	}
+}
+
+/* ---------- Desktop ---------- */
+
+@media (min-width: 64rem) {
+	.page {
+		padding-top: var(--space-5);
+	}
+
+	.action-bar {
+		position: static;
+		margin: var(--space-5) 0 0;
+		padding: 0;
+		border: 0;
+		background: none;
+	}
+}

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<!-- Boot's error page for the pages (D42); the API answers with Problem Details instead (D41). -->
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head(${status == 404 ? 'Page not found' : 'Error'})}"></head>
+<body>
+<th:block th:replace="~{layout :: header(null)}"></th:block>
+<main class="page page--narrow">
+	<div class="stack">
+		<h1 th:text="${status == 404 ? 'Page not found' : 'Something went wrong'}">Something went wrong</h1>
+		<p class="muted" th:text="|${status} ${error}|">500 Internal Server Error</p>
+		<p><a class="button button--primary" th:href="@{/}">Go to the schedule</a></p>
+	</div>
+</main>
+</body>
+</html>

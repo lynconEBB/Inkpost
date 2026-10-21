@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Rule')}"></head>
+<body>
+<th:block th:replace="~{layout :: header('schedule')}"></th:block>
+<main class="page page--narrow" id="rule-page" th:data-rule-id="${ruleId}">
+	<h1>Rule</h1>
+</main>
+<script type="module" th:src="@{/js/rule-form.js}"></script>
+</body>
+</html>

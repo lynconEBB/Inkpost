@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Frames')}"></head>
+<body>
+<th:block th:replace="~{layout :: header('frames')}"></th:block>
+<main class="page">
+	<h1>Frames</h1>
+</main>
+<script type="module" th:src="@{/js/frames.js}"></script>
+</body>
+</html>

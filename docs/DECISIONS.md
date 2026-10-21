@@ -379,6 +379,53 @@ file, and tests need no Docker. Postgres would add a server to run, dumps and Te
 in one place. A server that fixed up images would show something the editor didn't preview; the
 browser is the only renderer (D19).
 
+### D42. Web UI: Thymeleaf shells, plain JS modules that call the API
+- **Shells:** Thymeleaf renders each page's markup, and a plain JS module (D20) fills it from
+  `/api/**`. There are no server-rendered forms: the API already has every endpoint the pages need.
+- **Page controllers:** one `@Controller` per domain (`SchedulePageController`, `FramePageController`)
+  only returns the view name, plus the rule ID on the edit page. They stay out of the OpenAPI docs.
+- **Errors:** `ApiExceptionHandler` only handles `@RestController`s, so API errors stay Problem Details
+  (D41), while page errors (an unknown URL, a 500) get Boot's error page, `templates/error.html`.
+  A too large upload fails before Spring chooses a handler, so `UploadSizeExceptionHandler` keeps
+  that `413` in Problem Details. Other errors of that kind, like an unknown `/api/` URL, get Boot's
+  JSON error: only a bug or a hand-written request makes them.
+- **Templates:** `layout.html` holds the fragments `head(title)` and `header(page)`, with no Layout
+  Dialect. Repeated markup (rule rows, frame cards, timeline days) lives in `<template>` elements that
+  the JS clones, so the JS builds no HTML strings. IDs reach the JS as `data-*` attributes.
+- **Scripts:** `<script type="module">`, importing each other by relative path. No bundler, no npm
+  packages, no framework.
+- **Logic stays out of the DOM:** everything that can be wrong (dates, summaries, timeline days, crop,
+  dithering) lives in DOM-free modules, tested with `node --test`.
+- **Times:** always shown in Brasília time (D39), and request date-times are built as local strings
+  straight from the inputs (D41), never through `Date`.
+- **English:** the UI is in English, with the strings inline in the templates and the JS, and no
+  i18n machinery.
+- **Caching:** static files are sent with `Cache-Control: no-cache`. Cloudflare caches `.js` and
+  `.css` by extension, and a deploy has to show up right away.
+- Pages and static files sit behind Cloudflare Access like `/api/**` (D16).
+
+**Why:** one app and one deploy (D20), and the pages only draw what the API computes (D39). Plain
+modules need no build step, and the DOM-free ones are tested without a browser.
+
+### D43. Responsive: phone first
+Every page works on a phone and on a desktop.
+- **Breakpoints:** the base CSS is the phone layout. `min-width: 40rem` is for large phones and
+  tablets, and `min-width: 64rem` for desktops, with two columns on the schedule and upload pages.
+- **Width:** from 320 px, with no horizontal scrolling. Content is at most `72rem` wide, centered, with
+  `1rem` gutters. Sizes are in `rem` and grids are fluid; the only fixed pixel size is the canvas's
+  800×480 backing size.
+- **Touch:** tap targets are at least 44×44 px, nothing works only on hover, inputs are at least
+  16 px (or iOS zooms in on focus), and dates and selects are native inputs, so phones show their own
+  pickers. Zoom is never disabled.
+- **Dialogs** are full screen on phones (`100dvh`) and a centered box from `40rem`.
+- **Main action:** Save and Upload sit in a sticky bar at the bottom on phones, padded with
+  `env(safe-area-inset-bottom)`.
+- **Accessibility:** every input has a label, focus is visible, and color is never the only cue.
+- Checked at 320×568, 390×844, 768×1024, 1280×800 and 1920×1080.
+
+**Why:** the content changes throughout the day, from wherever the owner is, so a phone is the
+first screen to design for.
+
 ## Guiding principle
 
 Prefer doing a few things well over supporting many features or edge cases. When in doubt,
@@ -387,7 +434,6 @@ pick the option with fewer cases to handle.
 ## Open questions
 
 - Which font and which 3 sizes (prototype).
-- Who uses the web UI (just the owner, or the girlfriend too)?
 - Timeline layout (D39): days as rows with the 8 blocks as columns (fits a phone), or horizontal
   tracks (desktop)?
 - Backups of the SQLite file (D40).
