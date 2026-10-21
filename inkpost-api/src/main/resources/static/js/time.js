@@ -31,6 +31,11 @@ export function toInstant(local) {
 	return new Date(`${local.length === 10 ? `${local}T00:00:00` : local}${OFFSET}`);
 }
 
+/** A date-time from the API, which carries its offset (D41), as a local date-time. A local one stays as it is. */
+export function localOf(dateTime) {
+	return /(Z|[+-]\d\d:\d\d)$/.test(dateTime) ? toLocal(new Date(dateTime)) : dateTime.slice(0, 19);
+}
+
 /** Across midnight and month ends. */
 export function addHours(local, hours) {
 	return new Date(Date.parse(`${local}Z`) + hours * HOUR_MS).toISOString().slice(0, 19);
@@ -75,6 +80,29 @@ export function blocksOfHours(hours) {
 /** When a block starts: 06:00. */
 export function blockTime(block) {
 	return `${pad(block * BLOCK_HOURS)}:00`;
+}
+
+/** A date and a block as a local date-time: 2026-11-20 and block 2 are 2026-11-20T06:00:00. */
+export function atBlock(date, block) {
+	return `${date}T${blockTime(block)}:00`;
+}
+
+/** The date and the block of a local date-time on a 3-hour mark. */
+export function splitBlock(local) {
+	return { date: local.slice(0, 10), block: Math.floor(Number(local.slice(11, 13)) / BLOCK_HOURS) };
+}
+
+/**
+ * The rule form's "Until" is the last block shown, inclusive, while a rule's end is exclusive (D38, D45):
+ * until 29 Nov, block 21:00, is an end of 30 Nov 00:00.
+ */
+export function untilToEnd(date, block) {
+	return addHours(atBlock(date, block), BLOCK_HOURS);
+}
+
+/** The "Until" a rule's end is shown as: the block just before it. */
+export function endToUntil(end) {
+	return splitBlock(addHours(end, -BLOCK_HOURS));
 }
 
 /** When the frame wakes next: 1 minute past a 3-hour mark (D3, D25). */

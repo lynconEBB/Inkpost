@@ -3,18 +3,23 @@ import { describe, test } from "node:test";
 import {
 	addDays,
 	addHours,
+	atBlock,
 	blocksOfHours,
 	blockTime,
+	endToUntil,
 	formatDay,
 	formatTime,
 	hoursOfBlock,
 	hoursOfBlocks,
+	localOf,
 	mondayOf,
 	nextWake,
 	range,
+	splitBlock,
 	toInstant,
 	toLocal,
 	today,
+	untilToEnd,
 	weekOf,
 } from "../../main/resources/static/js/time.js";
 
@@ -29,6 +34,13 @@ describe("local date-times", () => {
 		assert.equal(toLocal(new Date("2026-10-22T02:30:00Z")), "2026-10-21T23:30:00");
 		assert.equal(toInstant("2026-10-21T15:00:00").toISOString(), "2026-10-21T18:00:00.000Z");
 		assert.equal(toInstant("2026-10-21").toISOString(), "2026-10-21T03:00:00.000Z");
+	});
+
+	test("come from the API's date-times, whatever their offset", () => {
+		assert.equal(localOf("2026-11-20T06:00:00-03:00"), "2026-11-20T06:00:00");
+		assert.equal(localOf("2026-11-20T09:00:00Z"), "2026-11-20T06:00:00");
+		assert.equal(localOf("2026-11-20T00:00:00+00:00"), "2026-11-19T21:00:00");
+		assert.equal(localOf("2026-11-20T06:00:00"), "2026-11-20T06:00:00", "a local one stays as it is");
 	});
 
 	test("today is the date in Brasília", () => {
@@ -82,6 +94,45 @@ describe("blocks", () => {
 		assert.equal(blockTime(0), "00:00");
 		assert.equal(blockTime(2), "06:00");
 		assert.equal(blockTime(7), "21:00");
+	});
+
+	test("join a date into a local date-time, and split back", () => {
+		assert.equal(atBlock("2026-11-20", 2), "2026-11-20T06:00:00");
+		assert.equal(atBlock("2026-11-20", 0), "2026-11-20T00:00:00");
+		assert.deepEqual(splitBlock("2026-11-20T21:00:00"), { date: "2026-11-20", block: 7 });
+		assert.deepEqual(splitBlock("2026-11-20T00:00:00"), { date: "2026-11-20", block: 0 });
+	});
+});
+
+describe("until, the last block shown, and the exclusive end (D45)", () => {
+	test("the end is 3 hours after the last block starts", () => {
+		assert.equal(untilToEnd("2026-11-29", 2), "2026-11-29T09:00:00");
+		assert.equal(untilToEnd("2026-11-29", 6), "2026-11-29T21:00:00");
+	});
+
+	test("until the last block of a day ends at the next midnight", () => {
+		assert.equal(untilToEnd("2026-11-29", 7), "2026-11-30T00:00:00");
+		assert.equal(untilToEnd("2026-11-30", 7), "2026-12-01T00:00:00", "across a month end");
+		assert.equal(untilToEnd("2026-12-31", 7), "2027-01-01T00:00:00", "across a year end");
+		assert.equal(untilToEnd("2028-02-28", 7), "2028-02-29T00:00:00", "into a leap day");
+		assert.equal(untilToEnd("2027-02-28", 7), "2027-03-01T00:00:00", "past February");
+	});
+
+	test("an end shows as the block before it", () => {
+		assert.deepEqual(endToUntil("2026-11-30T00:00:00"), { date: "2026-11-29", block: 7 });
+		assert.deepEqual(endToUntil("2026-12-01T00:00:00"), { date: "2026-11-30", block: 7 });
+		assert.deepEqual(endToUntil("2027-01-01T00:00:00"), { date: "2026-12-31", block: 7 });
+		assert.deepEqual(endToUntil("2028-03-01T00:00:00"), { date: "2028-02-29", block: 7 });
+		assert.deepEqual(endToUntil("2026-11-29T09:00:00"), { date: "2026-11-29", block: 2 });
+		assert.deepEqual(endToUntil("2026-11-29T03:00:00"), { date: "2026-11-29", block: 0 });
+	});
+
+	test("round trip for every block", () => {
+		for (const block of range(8)) {
+			for (const date of ["2026-01-31", "2026-02-28", "2026-12-31", "2028-02-29"]) {
+				assert.deepEqual(endToUntil(untilToEnd(date, block)), { date, block });
+			}
+		}
 	});
 });
 

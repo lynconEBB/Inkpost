@@ -5,7 +5,43 @@
 <th:block th:replace="~{layout :: header('schedule')}"></th:block>
 <main class="page">
 	<h1 class="visually-hidden">Schedule</h1>
+	<div class="schedule">
+		<div class="schedule__side">
+			<section class="card" aria-labelledby="rules-title">
+				<div class="section-title">
+					<h2 id="rules-title">Rules</h2>
+					<a class="button button--primary" th:href="@{/rules/new}">New rule</a>
+				</div>
+				<p class="muted" id="rules-loading">Loading the rules…</p>
+				<p class="hint rules-intro" id="rules-intro" hidden>
+					Rules choose what the frame shows: each covers some hours, days or dates and rotates its
+					frames. The highest rule that covers an hour wins, and the default rule covers the rest.
+				</p>
+				<p class="warning rules-intro" id="default-empty" hidden>
+					The default rule has no frames, so the frame won't change when no other rule covers the hour.
+				</p>
+				<ol class="rule-list" id="rule-list" aria-label="Rules, highest first"></ol>
+			</section>
+		</div>
+	</div>
 </main>
+
+<template id="rule-row">
+	<li class="rule-row">
+		<span class="swatch" aria-hidden="true"></span>
+		<div class="rule-row__text">
+			<h3 class="rule-row__name"></h3>
+			<p class="hint rule-row__summary"></p>
+		</div>
+		<div class="rule-row__actions">
+			<button type="button" class="button button--icon" data-action="up">↑</button>
+			<button type="button" class="button button--icon" data-action="down">↓</button>
+			<a class="button" data-action="edit">Edit</a>
+			<button type="button" class="button button--danger" data-action="delete">Delete</button>
+		</div>
+	</li>
+</template>
+
 <script type="module" th:src="@{/js/schedule.js}"></script>
 </body>
 </html>

@@ -416,7 +416,8 @@ Every page works on a phone and on a desktop.
   800×480 backing size.
 - **Touch:** tap targets are at least 44×44 px, nothing works only on hover, inputs are at least
   16 px (or iOS zooms in on focus), and dates and selects are native inputs, so phones show their own
-  pickers. Zoom is never disabled.
+  pickers. Zoom is never disabled. Where 44 px doesn't fit, the layout gives way, never the target: the
+  days of the month are 7 chips a row from 360 px, and 6 on a 320 px phone.
 - **Dialogs** are full screen on phones (`100dvh`) and a centered box from `40rem`.
 - **Main action:** Save and Upload sit in a sticky bar at the bottom on phones, padded with
   `env(safe-area-inset-bottom)`.
@@ -445,6 +446,22 @@ browser is the only renderer (D19).
 
 **Why:** what the preview shows is exactly what the frame shows. Dithering an 800×480 crop takes a few
 milliseconds, so the sliders can re-dither on every animation frame.
+
+### D45. The rule form asks for the last block shown
+A rule's end is exclusive (D38): a rule from the 20th to the 29th ends on 30 Nov at 00:00. The form's
+"Until" asks instead for the last date and block the rule covers, inclusive (21:00–24:00 by default),
+and sends `endAt` = that block + 3 h. On load it shows `endAt − 3 h`.
+- "Starts" is a date and the block the rule starts with (00:00 by default). No date means no start, or
+  no end (`null`).
+- The summaries (`rule-summary.js`, the same on the rule list and the form) read the same way: an end at
+  midnight shows the day before ("20 Nov → 29 Nov"), any other end its time ("29 Nov 12:00").
+- The pattern fields are chips: the time of day is the 8 blocks (D26), sent as their hours. A field with
+  every chip checked is sent as `null`, every value (D41), and collapses to one line ("Every month ·
+  Change"). None checked is an error in the form, never sent.
+
+**Why:** "until 29 Nov" includes the 29th to anyone who reads it, and asking for the day after would be
+off by one in every rule. The stored end stays exclusive, so the rule semantics (D38) and the API (D41)
+don't change.
 
 ## Guiding principle
 

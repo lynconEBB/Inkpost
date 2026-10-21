@@ -4,8 +4,196 @@
 <body>
 <th:block th:replace="~{layout :: header('schedule')}"></th:block>
 <main class="page page--narrow" id="rule-page" th:data-rule-id="${ruleId}">
-	<h1>Rule</h1>
+	<h1 class="page-title" id="title" th:text="${ruleId == null} ? 'New rule' : 'Edit rule'">Rule</h1>
+	<p class="muted" id="loading">Loading…</p>
+	<div class="card empty" id="missing" hidden>
+		<p>This rule doesn't exist anymore.</p>
+		<a class="button" th:href="@{/}">Back to the schedule</a>
+	</div>
+
+	<form class="rule-form" id="rule-form" novalidate hidden>
+		<p class="rule-summary" id="summary" aria-live="polite"></p>
+
+		<div class="field form-section">
+			<label class="label" for="name">Name</label>
+			<input class="input" id="name" type="text" maxlength="100" required autocomplete="off">
+			<p class="field-error" data-error-for="name" hidden></p>
+		</div>
+
+		<!-- The default rule covers everything (D38): only its name and frames change. -->
+		<p class="hint form-section" id="default-note" hidden>
+			The default rule covers every hour that no other rule covers, so it has only a name and frames.
+		</p>
+
+		<fieldset class="fieldset form-section" data-window>
+			<legend class="label">Starts</legend>
+			<div class="date-block">
+				<div class="field">
+					<label for="start-date">Date</label>
+					<input class="input" type="date" id="start-date">
+				</div>
+				<div class="field">
+					<label for="start-block">From</label>
+					<select class="select" id="start-block" disabled></select>
+				</div>
+				<button type="button" class="button date-block__clear" id="start-clear" hidden>Clear</button>
+			</div>
+			<p class="hint">No date: it has always started.</p>
+			<p class="field-error" data-error-for="startAt" hidden></p>
+		</fieldset>
+
+		<fieldset class="fieldset form-section" data-window>
+			<legend class="label">Until</legend>
+			<div class="date-block">
+				<div class="field">
+					<label for="until-date">Date</label>
+					<input class="input" type="date" id="until-date">
+				</div>
+				<div class="field">
+					<label for="until-block">Last block</label>
+					<select class="select" id="until-block" disabled></select>
+				</div>
+				<button type="button" class="button date-block__clear" id="until-clear" hidden>Clear</button>
+			</div>
+			<p class="hint">The last block is included. No date: it never ends.</p>
+			<p class="field-error" data-error-for="endAt" hidden></p>
+		</fieldset>
+
+		<fieldset class="fieldset form-section pattern" data-pattern="hours">
+			<legend class="label">Time of day</legend>
+			<div class="pattern__every">
+				<span>Every hour</span>
+				<button type="button" class="button" data-change>Change</button>
+			</div>
+			<div class="pattern__body" hidden>
+				<ul class="chips" data-chips></ul>
+				<div class="button-row">
+					<button type="button" class="button" data-all>All</button>
+					<button type="button" class="button" data-none>None</button>
+				</div>
+			</div>
+			<p class="field-error" data-error-for="hours" hidden></p>
+		</fieldset>
+
+		<fieldset class="fieldset form-section pattern" data-pattern="weekdays">
+			<legend class="label">Weekdays</legend>
+			<div class="pattern__every">
+				<span>Every day of the week</span>
+				<button type="button" class="button" data-change>Change</button>
+			</div>
+			<div class="pattern__body" hidden>
+				<ul class="chips" data-chips></ul>
+				<div class="button-row">
+					<button type="button" class="button" data-all>All</button>
+					<button type="button" class="button" data-none>None</button>
+				</div>
+			</div>
+			<p class="field-error" data-error-for="weekdays" hidden></p>
+		</fieldset>
+
+		<fieldset class="fieldset form-section pattern" data-pattern="daysOfMonth">
+			<legend class="label">Days of the month</legend>
+			<div class="pattern__every">
+				<span>Every day of the month</span>
+				<button type="button" class="button" data-change>Change</button>
+			</div>
+			<div class="pattern__body" hidden>
+				<ul class="chips chips--days" data-chips></ul>
+				<p class="hint">Day 31 never matches in shorter months.</p>
+				<div class="button-row">
+					<button type="button" class="button" data-all>All</button>
+					<button type="button" class="button" data-none>None</button>
+				</div>
+			</div>
+			<p class="field-error" data-error-for="daysOfMonth" hidden></p>
+		</fieldset>
+
+		<fieldset class="fieldset form-section pattern" data-pattern="months">
+			<legend class="label">Months</legend>
+			<div class="pattern__every">
+				<span>Every month</span>
+				<button type="button" class="button" data-change>Change</button>
+			</div>
+			<div class="pattern__body" hidden>
+				<ul class="chips" data-chips></ul>
+				<div class="button-row">
+					<button type="button" class="button" data-all>All</button>
+					<button type="button" class="button" data-none>None</button>
+				</div>
+			</div>
+			<p class="field-error" data-error-for="months" hidden></p>
+		</fieldset>
+
+		<section class="form-section" aria-labelledby="frames-title">
+			<div class="section-title">
+				<h2 class="label" id="frames-title">Frames</h2>
+				<button type="button" class="button" id="add-frames">Add frames</button>
+			</div>
+			<p class="hint">Each update shows the next one, in this order, then starts again.</p>
+			<ol class="rule-frames" id="rule-frames" aria-label="Frames, in order"></ol>
+			<p class="muted" id="rule-frames-empty">No frames yet.</p>
+			<p id="no-library" hidden>
+				There are no frames yet. <a th:href="@{/frames/new}">Upload a photo</a> first.
+			</p>
+			<p class="warning" id="default-empty" hidden>
+				With no frames, the frame won't change when no other rule covers the hour.
+			</p>
+			<p class="field-error" data-error-for="frameIds" hidden></p>
+		</section>
+
+		<div class="action-bar">
+			<button type="button" class="button button--danger action-bar__start" id="delete" hidden>Delete</button>
+			<a class="button" th:href="@{/}">Cancel</a>
+			<button type="submit" class="button button--primary" id="save">Save</button>
+		</div>
+	</form>
 </main>
+
+<template id="chip">
+	<li class="chip">
+		<input class="chip__input" type="checkbox">
+		<label class="chip__label"></label>
+	</li>
+</template>
+
+<template id="rule-frame">
+	<li class="rule-frame">
+		<img class="thumb rule-frame__thumb" width="800" height="480" alt="" loading="lazy">
+		<span class="rule-frame__name"></span>
+		<div class="rule-frame__actions">
+			<button type="button" class="button button--icon" data-action="up">↑</button>
+			<button type="button" class="button button--icon" data-action="down">↓</button>
+			<button type="button" class="button button--icon button--danger" data-action="remove">✕</button>
+		</div>
+	</li>
+</template>
+
+<dialog class="dialog dialog--wide" id="picker" aria-labelledby="picker-title">
+	<div class="dialog__header">
+		<h2 id="picker-title">Add frames</h2>
+		<button type="button" class="button button--icon button--plain" data-close aria-label="Close">✕</button>
+	</div>
+	<div class="dialog__body stack">
+		<p class="hint">Tap a frame to add it at the end. A frame can be in the list more than once.</p>
+		<ul class="frame-grid" id="picker-grid" aria-label="Frames"></ul>
+	</div>
+	<div class="dialog__footer">
+		<button type="button" class="button button--primary" data-close>Done</button>
+	</div>
+</dialog>
+
+<template id="picker-item">
+	<li>
+		<button type="button" class="card picker-item">
+			<span class="picker-item__image">
+				<img class="thumb" width="800" height="480" alt="" loading="lazy">
+				<span class="badge" hidden></span>
+			</span>
+			<span class="picker-item__name"></span>
+		</button>
+	</li>
+</template>
+
 <script type="module" th:src="@{/js/rule-form.js}"></script>
 </body>
 </html>
