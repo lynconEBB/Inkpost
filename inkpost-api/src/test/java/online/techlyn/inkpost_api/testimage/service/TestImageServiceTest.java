@@ -1,7 +1,9 @@
-package online.techlyn.inkpost_api.display;
+package online.techlyn.inkpost_api.testimage.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import online.techlyn.inkpost_api.frame.model.MonoBitmap;
+import online.techlyn.inkpost_api.testimage.model.TestPattern;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;

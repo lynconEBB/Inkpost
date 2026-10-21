@@ -1,4 +1,4 @@
-package online.techlyn.inkpost_api.schedule;
+package online.techlyn.inkpost_api.schedule.entity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -7,8 +7,8 @@ import jakarta.persistence.PersistenceException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import online.techlyn.inkpost_api.display.MonoBitmap;
-import online.techlyn.inkpost_api.frame.Frame;
+import online.techlyn.inkpost_api.frame.entity.Frame;
+import online.techlyn.inkpost_api.frame.model.MonoBitmap;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;

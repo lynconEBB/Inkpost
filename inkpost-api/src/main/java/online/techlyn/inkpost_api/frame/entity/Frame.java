@@ -1,4 +1,4 @@
-package online.techlyn.inkpost_api.frame;
+package online.techlyn.inkpost_api.frame.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,7 +10,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import online.techlyn.inkpost_api.display.MonoBitmap;
+import online.techlyn.inkpost_api.frame.model.MonoBitmap;
 
 /** One picture for the display: the smallest unit the schedule shows. */
 @Entity

@@ -1,4 +1,4 @@
-package online.techlyn.inkpost_api.display;
+package online.techlyn.inkpost_api.testimage.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import online.techlyn.inkpost_api.testimage.model.TestPattern;
+import online.techlyn.inkpost_api.testimage.service.TestImageService;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Display", description = "Images for the e-paper frame")
+@Tag(name = "Test image", description = "Patterns for checking orientation, bit order and polarity on the real panel")
 @RestController
 @RequestMapping("/api/test-image")
 public class TestImageController {

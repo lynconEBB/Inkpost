@@ -1,4 +1,4 @@
-package online.techlyn.inkpost_api.schedule;
+package online.techlyn.inkpost_api.schedule.entity;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;

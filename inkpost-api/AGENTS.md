@@ -18,8 +18,25 @@ The JDK is pinned with mise (`mise.toml`, Temurin 27). Run Gradle through it:
   content type). No logic.
 - **Services** do the work.
 - **Repositories** handle persistence. Add them only once something is stored.
-- Code is grouped by feature (`display/`, …). Cross-cutting setup lives in `config/`.
 - OpenAPI annotations belong on controllers.
+
+## Packages: domain first, then layer
+
+Code is grouped by domain (`frame/`, `schedule/`, `testimage/`), and inside each domain by layer:
+
+| package | contents |
+|---|---|
+| `controller` | `@RestController`s |
+| `service` | `@Service`s, and the plain logic classes they use |
+| `repository` | Spring Data repositories |
+| `entity` | JPA entities |
+| `dto` | request and response bodies (records) |
+| `model` | domain types that aren't stored: value objects, enums (`MonoBitmap`, `TestPattern`) |
+
+- Package names are singular. Create a layer package only when it gets its first class; add other
+  layers (e.g. `exception`) the same way when needed.
+- Cross-cutting setup lives in the top-level `config/`.
+- Tests mirror the package of the class they test.
 
 ## Persistence (D40)
 
@@ -37,7 +54,7 @@ The JDK is pinned with mise (`mise.toml`, Temurin 27). Run Gradle through it:
 
 ## Display format
 
-`display/MonoBitmap` is the only place that knows the 48000-byte packing (D4). Reuse it, don't
+`frame/model/MonoBitmap` is the only place that knows the 48000-byte packing (D4). Reuse it, don't
 re-implement it.
 
 ## Git

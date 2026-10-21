@@ -1,4 +1,4 @@
-package online.techlyn.inkpost_api.display;
+package online.techlyn.inkpost_api.frame.model;
 
 import java.util.Arrays;
 

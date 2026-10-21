@@ -1,4 +1,4 @@
-package online.techlyn.inkpost_api.display;
+package online.techlyn.inkpost_api.testimage.controller;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -7,6 +7,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import online.techlyn.inkpost_api.testimage.model.TestPattern;
+import online.techlyn.inkpost_api.testimage.service.TestImageService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;

@@ -1,5 +1,7 @@
-package online.techlyn.inkpost_api.display;
+package online.techlyn.inkpost_api.testimage.service;
 
+import online.techlyn.inkpost_api.frame.model.MonoBitmap;
+import online.techlyn.inkpost_api.testimage.model.TestPattern;
 import org.springframework.stereotype.Service;
 
 @Service
