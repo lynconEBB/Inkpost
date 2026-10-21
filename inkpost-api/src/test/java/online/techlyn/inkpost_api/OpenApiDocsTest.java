@@ -20,7 +20,7 @@ class OpenApiDocsTest {
 	@Test
 	void documentsTheEndpoints() throws Exception {
 		mockMvc.perform(get("/v3/api-docs"))
-				.andExpect(status().isOk())
+                .andExpect(status().isOk())
 				.andExpect(jsonPath("$.paths['/api/test-image']").exists())
 				.andExpect(jsonPath("$.paths['/actuator/health']").exists());
 	}

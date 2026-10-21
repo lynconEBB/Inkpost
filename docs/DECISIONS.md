@@ -214,28 +214,147 @@ dithered once (with the slider settings) and becomes plain pixels; to re-dither,
 Text uses a single font family with only three predefined sizes. Exact font and sizes to be
 chosen by prototyping what looks best in 1-bit.
 
-### D23. Schedule is a timeline of "from this date-time, show this frame"
-Each schedule entry is (start date-time, frame). The current frame is the entry with the latest
-start ≤ now; it stays displayed until the next entry starts.
-Example: A at 14 Feb 11:00, B at 14 Feb 19:00 → a request on 14 Feb 13:00 gets A; any request
-from 14 Feb 19:00 onward (e.g. 16 Feb) gets B.
-Because the device wakes every 3 hours, a frame appears between its start time and ~3 hours later.
+### D23. Replaced by D38 (was: schedule as a timeline of "from this date-time, show this frame")
+A timeline of single (start date-time, frame) entries can't express repeating or rotating content.
 
 ### D25. Wake 1–2 minutes after each mark
 The firmware targets e.g. 12:01, not 12:00, so small clock differences between the device and
 the server never make it fetch just before a schedule entry starts.
 
 ### D26. Schedule times can only be on the 3-hour marks
-The schedule UI only offers 00:00, 03:00, 06:00, … 21:00, so the schedule always matches when
-the frame actually wakes.
+The schedule UI only offers the 3-hour blocks starting at 00:00, 03:00, 06:00, … 21:00 (D38),
+so the schedule always matches when the frame actually wakes.
 
 ### D27. Schedule edge cases
-- No entry has started yet → the device endpoint returns `404`; the firmware treats it as a
-  failure and leaves the display untouched (D5).
+- No rule covers now (only possible while the default rule has no frames, D38) → the device
+  endpoint returns `404`; the firmware treats it as a failure and leaves the display untouched (D5).
 - Device and server use the same explicitly configured timezone (server: `application.properties`,
   firmware: POSIX TZ string). The zone is Brasília: `America/Sao_Paulo` on the server, `"<-03>3"`
   in the firmware (UTC−3, no daylight saving time).
-- A frame that appears in the schedule cannot be deleted; remove it from the schedule first.
+- A frame used in a rule cannot be deleted; remove it from the rule first.
+
+### D38. Schedule = prioritized rules: a cron-like hour pattern inside a date window, rotating frames
+Replaces D23. A rule has:
+- A window: `start_at` and `end_at` date-times, both optional, `end_at` exclusive.
+- An hour pattern, like cron without minutes: hours, days of the month, months and weekdays.
+  Each field is a set of allowed values stored as a bitmask (`*` = all bits set, never null).
+- An ordered list of frames: at least one, except the default rule, which may be empty.
+
+A rule **covers** an instant when the instant is inside the window and its hour, day, month and
+weekday all match. Day of the month and weekday combine with AND (cron uses OR when both are
+restricted): "day 13 + Friday" is Friday the 13th. Day 31 simply never matches in shorter months.
+A matched hour is owned for the whole hour (06:00–06:59), not a one-off trigger like in cron.
+Hours are local time (D27); Brasília has no daylight saving time, so no hour is skipped or repeated.
+
+Which rule wins:
+- Rules are an ordered list; the highest one that covers now wins. A new rule goes on top, and
+  the list can be reordered.
+- A default rule sits at the bottom, covers everything, has no window, and cannot be deleted or
+  moved. When an event ends, the display falls back to whatever rule is below it.
+
+Rotation advances per request: each device request that resolves to a rule gets
+`frames[next_position % n]`, and `next_position` is incremented in the same transaction.
+- When a higher rule takes over, the rotation pauses and resumes where it was (nothing is skipped).
+- A fetch or draw that fails after the server answered still consumes a frame; the retry (D2) gets
+  the next one. Accepted: it is rare, and nobody notices it in a photo rotation.
+- Every call to the device endpoint advances, including the reset button (D12 becomes "next
+  frame") and manual curl/Swagger calls. The web UI never calls it; it uses a read-only resolve.
+- If the next frame has the same pixels as the one shown, the answer is `304` (D9) and the
+  rotation still advances.
+- The web UI shows which rule and which set of frames covers each moment, not the exact frame.
+  For a specific "photo of the day", create a one-day rule (or one repeating on a day of the month).
+
+The device only wakes at the 3-hour marks (D3), so the UI only offers 3-hour blocks (D26), and each
+block sets its 3 hour bits (the 06:00 block = hours 6, 7, 8). If the device ever wakes more often,
+the stored rules already mean the right thing; only that validation is relaxed.
+Not supported: minutes; cron's `L`, `W` and `#` (last day of the month, nearest weekday, n-th
+weekday of the month); a year field (the window covers it).
+
+Data model (the full schema is in the Flyway migrations, D40):
+
+```
+rule       (id, name, priority, is_default, start_at?, end_at?,
+            hours,                  -- 24 bits, bit h = hour h
+            days_of_month,          -- 31 bits, bit d-1 = day d
+            months,                 -- 12 bits, bit m-1 = month m
+            weekdays,               -- 7 bits, bit 0 = Monday (ISO)
+            next_position)
+rule_frame (rule_id, position, frame_id)
+```
+
+**Why:** one kind of rule covers a single slot, a consecutive range, weekly and yearly repeats,
+and rotations. Request-driven rotation needs no counting over time and pauses naturally under
+higher rules; its costs (no exact preview of the future, a frame lost on a rare failure) are fine
+for a gift.
+
+### D39. Schedule timeline: one track per rule; the server computes, the page only draws
+The web UI shows the schedule as tracks, like a video editor: one track per rule in priority order,
+the highest on top, so an upper track shows over the lower ones. A row above the tracks shows what
+is on air. Where a rule covers an hour but a higher rule wins, its track is hatched.
+
+```
+GET /api/timeline?from=2026-10-19T00:00&to=2026-10-26T00:00
+
+{
+  "version": 42,
+  "rules": [
+    { "id": 7, "name": "Trip", "priority": 2, "frames": [12, 15],
+      "covers": [ { "start": "2026-10-21T00:00-03:00", "end": "2026-10-23T00:00-03:00" } ] },
+    { "id": 1, "name": "Default", "priority": 0, "frames": [1, 2, 3],
+      "covers": [ { "start": "2026-10-19T00:00-03:00", "end": "2026-10-26T00:00-03:00" } ] }
+  ],
+  "onAir": [
+    { "start": "2026-10-19T00:00-03:00", "end": "2026-10-21T00:00-03:00", "ruleId": 1 },
+    { "start": "2026-10-21T00:00-03:00", "end": "2026-10-23T00:00-03:00", "ruleId": 7 },
+    { "start": "2026-10-23T00:00-03:00", "end": "2026-10-26T00:00-03:00", "ruleId": 1 }
+  ]
+}
+```
+
+- `rules`: the rules that cover at least one hour of the range, highest priority first. `covers`
+  is what each one covers; `onAir` is which rule wins. Both are computed with the same code the
+  device endpoint uses (D38).
+- Intervals are `[start, end)`, ISO-8601 with the offset, consecutive hours merged, and clipped to
+  the requested range. They stay the same if the device ever wakes every hour.
+- The page (a plain JS module, D20) has no rule logic: it draws `covers` hatched and the rule's
+  `onAir` parts solid on top. Times are always shown in Brasília time (`Intl.DateTimeFormat` with
+  `timeZone: "America/Sao_Paulo"`), whatever the browser's zone.
+- The page can keep the ranges it already loaded while the user navigates: concatenate the lists
+  and merge intervals of the same rule where one ends exactly where the next starts. Responses are
+  clipped to their range, so they never overlap. Kept in memory only, never in `localStorage`.
+- `version` is a counter incremented on every rule change (create, edit, delete, reorder, frame
+  list). A response with a different version drops everything loaded and reloads the visible range.
+  Device requests don't change it: the timeline shows sets of frames, not the exact frame (D38).
+- Rule colors come from a palette by rule id; they are not stored.
+
+"Now on the frame" card: `GET /api/device` returns the last device request (time, rule, frame),
+written in the same transaction that advances the rotation (D38). With no request for more than
+3 h 15 min, the frame missed a wake and the card shows it as offline. It is a separate endpoint
+because it changes on every wake and must not be kept with the timeline.
+
+Both endpoints are part of the web UI: behind Cloudflare Access (D16), not the device key (D8).
+
+**Why:** the rule semantics live in one place, like the renderer in D19. A second copy in JS would
+have to match the timezone, the AND between day of the month and weekday, the exclusive end and
+day 31, and computing it costs nothing for one user. Intervals are what the page draws, and they
+merge cleanly across ranges.
+
+### D40. SQLite in one file; only Flyway changes the schema
+Everything the API stores is in one SQLite file, through JPA: frames (as 48000-byte BLOBs), rules,
+and a single-row `app_state` (the schedule version and the last device request, D39). Only Flyway
+migrations create or change the schema; Hibernate just validates it at startup.
+- SQLite is a library inside the app, not a server: there is no container for it. The file is
+  `inkpost.db` in the working directory, or `INKPOST_DB_PATH`. If the app runs in Docker, the file
+  goes in a mounted volume.
+- One connection (a pool of 1): SQLite allows one writer at a time, and there is one user.
+- Foreign keys are off by default in SQLite; the connection URL turns them on.
+- Date-times are stored as ISO-8601 text in Brasília local time (D27), truncated to seconds
+  (`2026-10-21T15:00:00`): readable, and they compare correctly as text. sqlite-jdbc would
+  otherwise store epoch milliseconds.
+- SQLite's `ALTER TABLE` is limited: a migration that changes a column rebuilds the table.
+- Tests run against a fresh in-memory database per Spring context, migrated by Flyway.
+**Why:** one user and little data (a thousand frames is about 48 MB). A backup is a copy of one
+file, and tests need no Docker. Postgres would add a server to run, dumps and Testcontainers.
 
 ## Guiding principle
 
@@ -246,4 +365,6 @@ pick the option with fewer cases to handle.
 
 - Which font and which 3 sizes (prototype).
 - Who uses the web UI (just the owner, or the girlfriend too)?
-- Storage (database, where photos live, backups).
+- Timeline layout (D39): days as rows with the 8 blocks as columns (fits a phone), or horizontal
+  tracks (desktop)?
+- Backups of the SQLite file (D40).

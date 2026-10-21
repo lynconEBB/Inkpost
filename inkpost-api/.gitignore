@@ -35,3 +35,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### SQLite database (D40) ###
+/inkpost.db*
