@@ -293,23 +293,25 @@ the highest on top, so an upper track shows over the lower ones. A row above the
 is on air. Where a rule covers an hour but a higher rule wins, its track is hatched.
 
 ```
-GET /api/timeline?from=2026-10-19T00:00&to=2026-10-26T00:00
+GET /api/timeline?from=2026-10-19T00:00:00&to=2026-10-26T00:00:00
 
 {
   "version": 42,
   "rules": [
-    { "id": 7, "name": "Trip", "priority": 2, "frames": [12, 15],
-      "covers": [ { "start": "2026-10-21T00:00-03:00", "end": "2026-10-23T00:00-03:00" } ] },
-    { "id": 1, "name": "Default", "priority": 0, "frames": [1, 2, 3],
-      "covers": [ { "start": "2026-10-19T00:00-03:00", "end": "2026-10-26T00:00-03:00" } ] }
+    { "id": 7, "name": "Trip", "priority": 2, "isDefault": false, "frameIds": [12, 15],
+      "covers": [ { "start": "2026-10-21T00:00:00-03:00", "end": "2026-10-23T00:00:00-03:00" } ] },
+    { "id": 1, "name": "Default", "priority": 0, "isDefault": true, "frameIds": [1, 2, 3],
+      "covers": [ { "start": "2026-10-19T00:00:00-03:00", "end": "2026-10-26T00:00:00-03:00" } ] }
   ],
   "onAir": [
-    { "start": "2026-10-19T00:00-03:00", "end": "2026-10-21T00:00-03:00", "ruleId": 1 },
-    { "start": "2026-10-21T00:00-03:00", "end": "2026-10-23T00:00-03:00", "ruleId": 7 },
-    { "start": "2026-10-23T00:00-03:00", "end": "2026-10-26T00:00-03:00", "ruleId": 1 }
+    { "start": "2026-10-19T00:00:00-03:00", "end": "2026-10-21T00:00:00-03:00", "ruleId": 1 },
+    { "start": "2026-10-21T00:00:00-03:00", "end": "2026-10-23T00:00:00-03:00", "ruleId": 7 },
+    { "start": "2026-10-23T00:00:00-03:00", "end": "2026-10-26T00:00:00-03:00", "ruleId": 1 }
   ]
 }
 ```
+
+`from` and `to` are whole hours, `from < to`, at most 62 days apart (otherwise `400`, D41).
 
 - `rules`: the rules that cover at least one hour of the range, highest priority first. `covers`
   is what each one covers; `onAir` is which rule wins. Both are computed with the same code the

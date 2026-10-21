@@ -35,7 +35,8 @@ class OpenApiDocsTest {
 				.andExpect(jsonPath("$.paths['/api/rules/{id}'].get").exists())
 				.andExpect(jsonPath("$.paths['/api/rules/{id}'].put").exists())
 				.andExpect(jsonPath("$.paths['/api/rules/{id}'].delete").exists())
-				.andExpect(jsonPath("$.paths['/api/rules/{id}/move'].post").exists());
+				.andExpect(jsonPath("$.paths['/api/rules/{id}/move'].post").exists())
+				.andExpect(jsonPath("$.paths['/api/timeline'].get").exists());
 	}
 
 	@Test
