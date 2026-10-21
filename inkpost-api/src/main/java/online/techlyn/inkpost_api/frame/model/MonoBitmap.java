@@ -20,15 +20,34 @@ public class MonoBitmap {
 		Arrays.fill(bytes, (byte) 0xFF);
 	}
 
-	public void setBlack(int x, int y) {
-		if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT) {
-			throw new IndexOutOfBoundsException("pixel (" + x + ", " + y + ") outside " + WIDTH + "x" + HEIGHT);
+	/** The bitmap of exactly {@link #SIZE_BYTES} packed bytes, as {@link #toBytes()} returns them. */
+	public static MonoBitmap fromBytes(byte[] packed) {
+		if (packed.length != SIZE_BYTES) {
+			throw new IllegalArgumentException("expected " + SIZE_BYTES + " bytes, got " + packed.length);
 		}
+		MonoBitmap bitmap = new MonoBitmap();
+		System.arraycopy(packed, 0, bitmap.bytes, 0, SIZE_BYTES);
+		return bitmap;
+	}
+
+	public void setBlack(int x, int y) {
+		checkBounds(x, y);
 		bytes[y * BYTES_PER_ROW + x / 8] &= (byte) ~(0x80 >>> (x % 8));
+	}
+
+	public boolean isBlack(int x, int y) {
+		checkBounds(x, y);
+		return (bytes[y * BYTES_PER_ROW + x / 8] & (0x80 >>> (x % 8))) == 0;
 	}
 
 	public byte[] toBytes() {
 		return bytes.clone();
+	}
+
+	private static void checkBounds(int x, int y) {
+		if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT) {
+			throw new IndexOutOfBoundsException("pixel (" + x + ", " + y + ") outside " + WIDTH + "x" + HEIGHT);
+		}
 	}
 
 }
