@@ -22,6 +22,7 @@ import online.techlyn.inkpost_api.frame.service.FrameEtag;
 import online.techlyn.inkpost_api.frame.service.TestPngs;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
@@ -40,7 +41,9 @@ import org.springframework.test.web.servlet.ResultActions;
 @Import(TestClockConfig.class)
 class EndToEndTest {
 
-	private static final String DEVICE_KEY = "Bearer test-device-key";
+	/** Whatever is configured: INKPOST_DEVICE_KEY, when set, wins over the tests' own key. */
+	@Value("${inkpost.device-key}")
+	private String deviceKey;
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -59,7 +62,7 @@ class EndToEndTest {
 		expected.setBlack(0, 0);
 		expected.setBlack(799, 479);
 		String etag = FrameEtag.of(expected.toBytes());
-		mockMvc.perform(get("/device/image").header("Authorization", DEVICE_KEY))
+		mockMvc.perform(get("/api/image").header("Authorization", "Bearer " + deviceKey))
 				.andExpect(status().isOk())
 				.andExpect(content().contentType(MediaType.APPLICATION_OCTET_STREAM))
 				.andExpect(header().string("ETag", etag))
@@ -67,7 +70,7 @@ class EndToEndTest {
 				.andExpect(content().bytes(expected.toBytes()));
 
 		clock.set(LocalDateTime.of(2026, 10, 21, 18, 1));
-		mockMvc.perform(get("/device/image").header("Authorization", DEVICE_KEY).header("If-None-Match", etag))
+		mockMvc.perform(get("/api/image").header("Authorization", "Bearer " + deviceKey).header("If-None-Match", etag))
 				.andExpect(status().isNotModified())
 				.andExpect(header().string("ETag", etag))
 				.andExpect(content().bytes(new byte[0]));
@@ -103,13 +106,13 @@ class EndToEndTest {
 		int second = upload("Bolo de novo", png);
 		scheduleInTheDefaultRule(defaultRuleId(), first, second);
 
-		String etag = mockMvc.perform(get("/device/image").header("Authorization", DEVICE_KEY))
+		String etag = mockMvc.perform(get("/api/image").header("Authorization", "Bearer " + deviceKey))
 				.andExpect(status().isOk())
 				.andReturn().getResponse().getHeader("ETag");
 		int servedFirst = lastFrameId();
 
 		clock.set(LocalDateTime.of(2026, 10, 22, 3, 1));
-		mockMvc.perform(get("/device/image").header("Authorization", DEVICE_KEY).header("If-None-Match", etag))
+		mockMvc.perform(get("/api/image").header("Authorization", "Bearer " + deviceKey).header("If-None-Match", etag))
 				.andExpect(status().isNotModified());
 
 		assertThat(List.of(servedFirst, lastFrameId())).containsExactlyInAnyOrder(first, second);

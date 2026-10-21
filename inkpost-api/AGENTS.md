@@ -9,9 +9,10 @@ The JDK is pinned with mise (`mise.toml`, Temurin 27). Run Gradle through it:
 
 - `mise exec -- ./gradlew test`
 - `mise exec -- ./gradlew bootRun`, with the device key (D8) in `INKPOST_DEVICE_KEY`: the app doesn't
-  start without it (tests set their own in `src/test/resources/config/`). Then:
+  start without it. Tests fall back to a key in `src/test/resources/config/`, and send whichever key is
+  configured. Then:
   - `/actuator/health`: health check
-  - `/swagger-ui.html`: API docs (springdoc); "Authorize" with the device key to call `/device/image`
+  - `/swagger-ui.html`: API docs (springdoc); "Authorize" with the device key to call `/api/image`
 
 ## Layering: controller → service → repository
 

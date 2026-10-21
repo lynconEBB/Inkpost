@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
- * Lets only the frame into {@code /device/**} (registered in {@code config/WebConfig}): the request must
+ * Lets only the frame into {@code /api/image} (registered in {@code config/WebConfig}): the request must
  * send {@code Authorization: Bearer <inkpost.device-key>} (D8), or it gets an empty {@code 401}. Every
  * response there, errors included, is {@code Cache-Control: no-store} so Cloudflare never caches it (D16).
  */

@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
 
-	/** The security scheme of the {@code /device/**} endpoints, so Swagger UI can send the key. */
+	/** The security scheme of {@code /api/image}, the frame's endpoint, so Swagger UI can send the key. */
 	public static final String DEVICE_KEY = "deviceKey";
 
 	@Bean

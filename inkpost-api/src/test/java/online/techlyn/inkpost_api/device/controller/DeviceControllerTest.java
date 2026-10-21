@@ -17,6 +17,7 @@ import online.techlyn.inkpost_api.device.service.DeviceService;
 import online.techlyn.inkpost_api.frame.model.FrameImage;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -26,9 +27,12 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 @WebMvcTest(DeviceController.class)
 class DeviceControllerTest {
 
-	private static final String KEY = "Bearer test-device-key";
 	private static final byte[] BITMAP = {0x00, (byte) 0xFF, 0x0F};
 	private static final String ETAG = "\"abc\"";
+
+	/** Whatever is configured: INKPOST_DEVICE_KEY, when set, wins over the tests' own key. */
+	@Value("${inkpost.device-key}")
+	private String deviceKey;
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -38,7 +42,7 @@ class DeviceControllerTest {
 
 	@Test
 	void withoutTheKeyIs401WithAnEmptyBody() throws Exception {
-		mockMvc.perform(get("/device/image"))
+		mockMvc.perform(get("/api/image"))
 				.andExpect(status().isUnauthorized())
 				.andExpect(header().string("WWW-Authenticate", "Bearer"))
 				.andExpect(header().string("Cache-Control", "no-store"))
@@ -48,8 +52,8 @@ class DeviceControllerTest {
 
 	@Test
 	void aWrongKeyIs401() throws Exception {
-		for (String authorization : new String[] {"Bearer wrong", "Bearer test-device-key2", "test-device-key", "Bearer "}) {
-			mockMvc.perform(get("/device/image").header("Authorization", authorization))
+		for (String authorization : new String[] {"Bearer wrong", "Bearer " + deviceKey + "2", deviceKey, "Bearer "}) {
+			mockMvc.perform(get("/api/image").header("Authorization", authorization))
 					.andExpect(status().isUnauthorized())
 					.andExpect(content().bytes(new byte[0]));
 		}
@@ -127,8 +131,8 @@ class DeviceControllerTest {
 		assertThatThrownBy(() -> new DeviceKeyInterceptor(" ")).isInstanceOf(IllegalStateException.class);
 	}
 
-	private static MockHttpServletRequestBuilder image() {
-		return get("/device/image").header("Authorization", KEY);
+	private MockHttpServletRequestBuilder image() {
+		return get("/api/image").header("Authorization", "Bearer " + deviceKey);
 	}
 
 }

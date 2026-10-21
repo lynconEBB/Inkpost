@@ -57,7 +57,7 @@ last stored ID in `If-None-Match`; if the image is unchanged the server replies 
 with no body and the firmware goes straight back to sleep without refreshing the panel.
 
 ```
-GET /device/image
+GET /api/image
 Authorization: Bearer <key>
 If-None-Match: "<last-id>"        (omitted if no ID stored)
 
@@ -180,7 +180,7 @@ can be packed into the 48000-byte format, and frames can be scheduled for displa
 
 ### D16. Web UI protected by Cloudflare Access
 Cloudflare Access (email login) sits in front of the web UI; no auth code in Spring.
-The device endpoints (`/device/**`, D41) are excluded from Access and protected only by the API key (D8).
+The device endpoint (`GET /api/image`, D41) is excluded from Access and protected only by the API key (D8).
 The device endpoint sends `Cache-Control: no-store` so Cloudflare never caches it.
 **Why:** simplest option; no login system to build.
 
@@ -359,8 +359,9 @@ migrations create or change the schema; Hibernate just validates it at startup.
 file, and tests need no Docker. Postgres would add a server to run, dumps and Testcontainers.
 
 ### D41. REST API conventions
-- Two path prefixes: `/api/**` is the web UI, behind Cloudflare Access (D16), with no auth in the
-  app; `/device/**` is the frame, excluded from Access and protected by the device key (D8).
+- Every endpoint is under `/api/`. All are the web UI's, behind Cloudflare Access (D16) with no auth
+  in the app, except `GET /api/image`, the frame's: Access excludes that one path, and the app checks
+  the device key on it (D8).
 - JSON in and out. Date-times in requests are Brasília local time without an offset
   (`2026-10-21T15:00:00`); in responses they carry the offset (`2026-10-21T15:00:00-03:00`), so a
   page never has to guess the zone (D27).

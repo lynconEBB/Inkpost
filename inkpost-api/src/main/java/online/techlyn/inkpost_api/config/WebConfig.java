@@ -22,10 +22,13 @@ public class WebConfig implements WebMvcConfigurer {
 		ApplicationConversionService.addApplicationConverters(registry);
 	}
 
-	/** {@code /device/**} is the frame's, protected by the device key; {@code /api/**} is behind Cloudflare Access (D41). */
+	/**
+	 * {@code /api/image} is the frame's, protected by the device key; the rest of {@code /api/**} is behind
+	 * Cloudflare Access (D41).
+	 */
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
-		registry.addInterceptor(deviceKeyInterceptor).addPathPatterns("/device/**");
+		registry.addInterceptor(deviceKeyInterceptor).addPathPatterns("/api/image");
 	}
 
 }

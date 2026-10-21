@@ -40,7 +40,7 @@ public class DeviceController {
 	@ApiResponse(responseCode = "401", description = "Missing or wrong device key", content = @Content)
 	@ApiResponse(responseCode = "404", description = "Nothing to show: the default rule has no frames (D27)",
 			content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = ProblemDetail.class)))
-	@GetMapping(value = "/device/image", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+	@GetMapping(value = "/api/image", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
 	public ResponseEntity<byte[]> getImage() {
 		FrameImage image = deviceService.nextImage();
 		// Spring answers 304 itself when If-None-Match matches the ETag (W/ ignored, lists accepted).
