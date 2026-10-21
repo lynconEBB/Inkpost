@@ -29,7 +29,13 @@ class OpenApiDocsTest {
 				.andExpect(jsonPath("$.paths['/api/frames/{id}'].patch").exists())
 				.andExpect(jsonPath("$.paths['/api/frames/{id}'].delete").exists())
 				.andExpect(jsonPath("$.paths['/api/frames/{id}/image.png'].get").exists())
-				.andExpect(jsonPath("$.paths['/api/frames/{id}/image'].put").exists());
+				.andExpect(jsonPath("$.paths['/api/frames/{id}/image'].put").exists())
+				.andExpect(jsonPath("$.paths['/api/rules'].get").exists())
+				.andExpect(jsonPath("$.paths['/api/rules'].post").exists())
+				.andExpect(jsonPath("$.paths['/api/rules/{id}'].get").exists())
+				.andExpect(jsonPath("$.paths['/api/rules/{id}'].put").exists())
+				.andExpect(jsonPath("$.paths['/api/rules/{id}'].delete").exists())
+				.andExpect(jsonPath("$.paths['/api/rules/{id}/move'].post").exists());
 	}
 
 	@Test
