@@ -16,7 +16,9 @@ The JDK is pinned with mise (`mise.toml`, Temurin 27). Run Gradle through it:
 
 - **Controllers** only do HTTP: bind params, call one service, build the response (status, headers,
   content type). No logic.
-- **Services** do the work.
+- **Services** do the work, and report failures with the shared exceptions in `common/exception/`
+  (`NotFoundException`, `ConflictException`, `InvalidInputException`), which
+  `config/ApiExceptionHandler` turns into Problem Details (D41).
 - **Repositories** handle persistence. Add them only once something is stored.
 - OpenAPI annotations belong on controllers.
 
@@ -36,7 +38,13 @@ Code is grouped by domain (`frame/`, `schedule/`, `testimage/`), and inside each
 - Package names are singular. Create a layer package only when it gets its first class; add other
   layers (e.g. `exception`) the same way when needed.
 - Cross-cutting setup lives in the top-level `config/`.
+- Code every domain shares lives in the top-level `common/`, by kind (`common/exception/`).
 - Tests mirror the package of the class they test.
+
+## Time
+
+Every "now" comes from the `Clock` bean (`config/ClockConfig`, in `inkpost.timezone`, Brasília,
+D27), never from `LocalDateTime.now()`, so tests can fix it.
 
 ## Persistence (D40)
 

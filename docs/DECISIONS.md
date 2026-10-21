@@ -356,6 +356,26 @@ migrations create or change the schema; Hibernate just validates it at startup.
 **Why:** one user and little data (a thousand frames is about 48 MB). A backup is a copy of one
 file, and tests need no Docker. Postgres would add a server to run, dumps and Testcontainers.
 
+### D41. REST API conventions
+- Two path prefixes: `/api/**` is the web UI, behind Cloudflare Access (D16), with no auth in the
+  app; `/device/**` is the frame, excluded from Access and protected by the device key (D8).
+- JSON in and out. Date-times in requests are Brasília local time without an offset
+  (`2026-10-21T15:00:00`); in responses they carry the offset (`2026-10-21T15:00:00-03:00`), so a
+  page never has to guess the zone (D27).
+- Errors are RFC 9457 Problem Details (`application/problem+json`): `400` invalid input, with an
+  `errors` array of `{ "field", "message" }`; `404` unknown ID; `409` conflicts with the current
+  state (e.g. deleting a frame a rule uses, D27); `413` upload too large. Bean Validation checks
+  shapes, services check domain rules, and both produce the same `400`.
+- Lists, not bitmasks: a rule's hours, days of the month, months and weekdays are lists of values
+  in the API (`"weekdays": [6, 7]`). In a request, a missing or null list means every value; in a
+  response, every value is always listed. The bitmasks (D38) are only how they are stored.
+- Strict PNG upload: a frame is uploaded as a PNG of exactly 800×480 where every pixel is opaque
+  pure black (`#000000`) or pure white (`#FFFFFF`). Anything else is a `400` naming the problem
+  (e.g. the first wrong pixel). The server never thresholds or dithers. Uploads are capped at 2 MB.
+**Why:** one error shape for every page to show. Lists say what they mean, and the bit layout stays
+in one place. A server that fixed up images would show something the editor didn't preview; the
+browser is the only renderer (D19).
+
 ## Guiding principle
 
 Prefer doing a few things well over supporting many features or edge cases. When in doubt,
