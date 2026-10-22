@@ -14,7 +14,7 @@ import {
 	removeLayer,
 	updateLayer,
 } from "./layers.js";
-import { BLACK, cellIs, cellLine, cellOf, CLEAR, ellipse, floodFill, line, rectangle, shift, WHITE } from "./raster.js";
+import { BLACK, cellLine, cellOf, CLEAR, ellipse, floodFill, line, rectangle, shift, WHITE } from "./raster.js";
 import { busy, clearFieldErrors, clone, showError, showFieldErrors, showFormError } from "./ui.js";
 import { cssWidth, fitZoom, framePoint, scrollToKeep, stepZoom } from "./viewport.js";
 
@@ -34,7 +34,7 @@ const TOOL_HINTS = {
 	move: "Drag the layer, or use the arrow keys (Shift: 10 pixels).",
 	hand: "Drag to scroll the view. Space or the middle button scrolls with any tool.",
 	pencil: "Draw in the color.",
-	pixel: "Fill whole cells of the grid. Starting on a cell that's all the color clears cells instead.",
+	pixel: "Fill whole cells of the grid in the color.",
 	eraser: "Erase to see-through: the layers below show.",
 	line: "Drag from one end to the other.",
 	rectangle: "Drag from one corner to the other. The border is in the color.",
@@ -649,11 +649,10 @@ function startDrawing(point) {
 		started.changed = true;
 	}
 	if (tool === "pixel") {
-		// The cell the drag starts on decides whether it fills or clears.
 		const size = Number(cellSize.value);
 		const cell = cellOf(point, size);
-		Object.assign(started, { size, cell, paint: cellIs(target.pixels, cell, size, color) ? CLEAR : color });
-		cellLine(pixels, cell, cell, size, started.paint);
+		Object.assign(started, { size, cell });
+		cellLine(pixels, cell, cell, size, color);
 		started.changed = true;
 	}
 	redraw();
@@ -667,7 +666,7 @@ function continueDrawing(point) {
 	const { pixels, from } = gesture;
 	if (gesture.tool === "pixel") {
 		const cell = cellOf(point, gesture.size);
-		cellLine(pixels, gesture.cell, cell, gesture.size, gesture.paint);
+		cellLine(pixels, gesture.cell, cell, gesture.size, color);
 		gesture.cell = cell;
 	} else if (gesture.tool === "pencil" || gesture.tool === "eraser") {
 		line(pixels, gesture.last, point, Number(brush.value), paint(gesture.tool));

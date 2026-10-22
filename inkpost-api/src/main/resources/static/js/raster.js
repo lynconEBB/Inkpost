@@ -34,23 +34,6 @@ export function cellOf(point, size) {
 	return { x: Math.floor(point.x / size), y: Math.floor(point.y / size) };
 }
 
-/** Whether every pixel of a cell is `color`. A cell that isn't all inside the frame isn't. */
-export function cellIs(pixels, cell, size, color) {
-	const left = cell.x * size;
-	const top = cell.y * size;
-	if (left < 0 || top < 0 || left + size > FRAME_WIDTH || top + size > FRAME_HEIGHT) {
-		return false;
-	}
-	for (let y = top; y < top + size; y++) {
-		for (let x = left; x < left + size; x++) {
-			if (pixels[y * FRAME_WIDTH + x] !== color) {
-				return false;
-			}
-		}
-	}
-	return true;
-}
-
 /** Every cell from one cell to the other filled, so a fast drag skips none. */
 export function cellLine(pixels, from, to, size, color) {
 	walk(from, to, (x, y) => {

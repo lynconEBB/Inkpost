@@ -3,7 +3,6 @@ import { describe, test } from "node:test";
 import {
 	BLACK,
 	blank,
-	cellIs,
 	cellLine,
 	cellOf,
 	CLEAR,
@@ -136,22 +135,6 @@ describe("the grid", () => {
 		cellLine(pixels, { x: 79, y: 47 }, { x: 80, y: 47 }, 10, BLACK);
 		assert.equal(count(pixels, BLACK), 100);
 		assert.equal(pixels[WIDTH * HEIGHT - 1], BLACK);
-	});
-
-	test("knows a cell that's all one color", () => {
-		const pixels = blank();
-		cellLine(pixels, { x: 3, y: 2 }, { x: 3, y: 2 }, 8, BLACK);
-
-		assert.equal(cellIs(pixels, { x: 3, y: 2 }, 8, BLACK), true);
-		assert.equal(cellIs(pixels, { x: 3, y: 2 }, 8, WHITE), false);
-		assert.equal(cellIs(pixels, { x: 4, y: 2 }, 8, CLEAR), true);
-		stamp(pixels, 24, 16, 1, WHITE);
-		assert.equal(cellIs(pixels, { x: 3, y: 2 }, 8, BLACK), false, "one pixel differs");
-	});
-
-	test("counts a cell outside the frame as not one color", () => {
-		assert.equal(cellIs(blank(), { x: -1, y: 0 }, 8, CLEAR), false);
-		assert.equal(cellIs(blank(), { x: 100, y: 0 }, 8, CLEAR), false);
 	});
 });
 

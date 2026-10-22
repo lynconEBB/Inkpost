@@ -540,9 +540,8 @@ photos stay adjustable, which is where re-doing work hurts; shapes stay pixels (
 - **Fill** only looks at the active layer's pixels, through the 4 neighbours (never diagonally).
 - **Pixel** is a pencil for pixel art: it fills whole cells of a grid of squares from the frame's top-left
   corner, 4 to 40 px, only sizes that divide 800 and 480 so every cell is whole (10 px by default, 80 × 48
-  cells). A drag fills every cell it crosses. Starting on a cell that's all the color clears cells
-  instead, so one tool draws and erases, on a phone too; like Fill, it looks at the active layer only.
-  The grid shows over the frame while Pixel is chosen, unless the cells are under 4 CSS px on the screen.
+  cells). A drag fills every cell it crosses, always in the color: switch to white to paint cells
+  white. The grid shows over the frame while Pixel is chosen, unless the cells are under 4 CSS px on the screen.
 - **Drawing on a photo, or with no layer,** draws on a new drawing layer above it.
 - **Layout:** on phones everything is stacked: tools, frame, zoom, layers, layer settings, frame name,
   then the sticky Save bar. From 64rem: tools on the left, the frame in the middle at the window's
