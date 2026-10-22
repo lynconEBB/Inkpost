@@ -1,2 +1,3 @@
 [tools]
 java = "temurin-27"
+node = "24"

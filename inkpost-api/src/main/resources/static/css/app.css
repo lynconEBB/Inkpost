@@ -1,0 +1,1225 @@
+/*
+ * inkpost's only stylesheet, hand-written (D42). Phone first (D43): the base rules are the phone layout,
+ * then two breakpoints: 40rem for large phones and tablets, 64rem for desktops.
+ */
+
+/* ---------- Variables ---------- */
+
+:root {
+	--color-bg: #f4f3ef;
+	--color-surface: #ffffff;
+	--color-text: #1d1d1b;
+	--color-muted: #5c5b57;
+	--color-border: #d6d3cb;
+	--color-accent: #1d4ed8;
+	--color-accent-hover: #1e40af;
+	--color-on-accent: #ffffff;
+	--color-danger: #b42318;
+	--color-danger-bg: #fef3f2;
+	--color-success: #05603a;
+	--color-success-bg: #ecfdf3;
+	--color-warning-bg: #fffaeb;
+	--color-warning-border: #dc9f0c;
+	--color-focus: #1d4ed8;
+
+	--space-1: 0.25rem;
+	--space-2: 0.5rem;
+	--space-3: 0.75rem;
+	--space-4: 1rem;
+	--space-5: 1.5rem;
+	--space-6: 2rem;
+
+	--font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	--font-size-xs: 0.75rem;
+	--font-size-sm: 0.875rem;
+	--font-size-base: 1rem;
+	--font-size-lg: 1.125rem;
+	--font-size-xl: 1.5rem;
+	/* iOS zooms in on focus into an input smaller than 16 px. */
+	--font-size-input: max(1rem, 16px);
+
+	--radius: 0.5rem;
+	--tap: 2.75rem; /* 44 px, the smallest tap target */
+	--page-width: 72rem;
+	--gutter: 1rem;
+	--shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 1px 3px rgb(0 0 0 / 0.08);
+}
+
+/* ---------- Base ---------- */
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	-webkit-text-size-adjust: 100%;
+	text-size-adjust: 100%;
+}
+
+body {
+	margin: 0;
+	min-height: 100dvh;
+	background: var(--color-bg);
+	color: var(--color-text);
+	font-family: var(--font-family);
+	font-size: var(--font-size-base);
+	line-height: 1.5;
+	overflow-wrap: break-word;
+}
+
+img,
+canvas {
+	display: block;
+	max-width: 100%;
+}
+
+img {
+	height: auto;
+}
+
+h1,
+h2,
+h3,
+p,
+ul,
+ol,
+fieldset {
+	margin: 0;
+}
+
+h1,
+h2,
+h3 {
+	line-height: 1.25;
+}
+
+h1 {
+	font-size: var(--font-size-xl);
+}
+
+h2 {
+	font-size: var(--font-size-lg);
+}
+
+h3 {
+	font-size: var(--font-size-base);
+}
+
+a {
+	color: var(--color-accent);
+}
+
+:focus-visible {
+	outline: 3px solid var(--color-focus);
+	outline-offset: 2px;
+}
+
+/* Wins over any display set by a class. */
+[hidden] {
+	display: none !important;
+}
+
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+.muted {
+	color: var(--color-muted);
+}
+
+.hint {
+	color: var(--color-muted);
+	font-size: var(--font-size-sm);
+}
+
+.stack {
+	display: grid;
+	gap: var(--space-4);
+}
+
+/* ---------- Header and nav ---------- */
+
+.site-header {
+	background: var(--color-surface);
+	border-bottom: 1px solid var(--color-border);
+}
+
+.site-header__inner {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	max-width: var(--page-width);
+	min-height: 3.5rem;
+	margin: 0 auto;
+	padding: 0 var(--gutter);
+}
+
+.site-header__brand {
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--tap);
+	color: var(--color-text);
+	font-size: var(--font-size-lg);
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.site-nav {
+	display: flex;
+	gap: var(--space-1);
+}
+
+.site-nav__link {
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--tap);
+	padding: 0 var(--space-3);
+	border-radius: var(--radius);
+	color: var(--color-text);
+	text-decoration: none;
+}
+
+.site-nav__link:hover {
+	background: var(--color-bg);
+}
+
+.site-nav__link[aria-current="page"] {
+	font-weight: 600;
+	text-decoration: underline;
+	text-decoration-thickness: 2px;
+	text-underline-offset: 0.4em;
+}
+
+/* ---------- Page ---------- */
+
+.page {
+	max-width: var(--page-width);
+	margin: 0 auto;
+	padding: var(--space-4) var(--gutter) var(--space-6);
+}
+
+.page--narrow {
+	max-width: calc(48rem + 2 * var(--gutter));
+}
+
+.page-title {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3);
+	margin-bottom: var(--space-4);
+}
+
+.section-title {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-2);
+	margin-bottom: var(--space-3);
+}
+
+/* ---------- Buttons ---------- */
+
+.button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-2);
+	min-width: var(--tap);
+	min-height: var(--tap);
+	padding: 0 var(--space-4);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	background: var(--color-surface);
+	color: var(--color-text);
+	font: inherit;
+	font-weight: 500;
+	line-height: 1.2;
+	text-align: center;
+	text-decoration: none;
+	cursor: pointer;
+	touch-action: manipulation;
+}
+
+.button:not(:disabled):hover {
+	background: var(--color-bg);
+}
+
+.button--primary {
+	border-color: var(--color-accent);
+	background: var(--color-accent);
+	color: var(--color-on-accent);
+}
+
+.button--primary:not(:disabled):hover {
+	border-color: var(--color-accent-hover);
+	background: var(--color-accent-hover);
+}
+
+.button--danger {
+	color: var(--color-danger);
+}
+
+.button--danger:not(:disabled):hover {
+	background: var(--color-danger-bg);
+}
+
+.button--icon {
+	padding: 0;
+	font-size: var(--font-size-lg);
+}
+
+.button--plain {
+	border-color: transparent;
+	background: transparent;
+}
+
+.button:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+.button[aria-busy="true"] {
+	cursor: progress;
+}
+
+.button[aria-pressed="true"] {
+	border-color: var(--color-text);
+	background: var(--color-text);
+	color: var(--color-surface);
+}
+
+.button-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+}
+
+/* ---------- Inputs ---------- */
+
+.field {
+	display: grid;
+	gap: var(--space-1);
+}
+
+.label {
+	font-weight: 600;
+}
+
+.input,
+.select {
+	width: 100%;
+	min-height: var(--tap);
+	padding: var(--space-2) var(--space-3);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	background: var(--color-surface);
+	color: var(--color-text);
+	font: inherit;
+	font-size: var(--font-size-input);
+}
+
+.range {
+	width: 100%;
+	min-height: var(--tap);
+	margin: 0;
+	accent-color: var(--color-accent);
+}
+
+.field-error {
+	color: var(--color-danger);
+	font-size: var(--font-size-sm);
+	font-weight: 500;
+	white-space: pre-line;
+}
+
+.field-error::before {
+	content: "⚠ ";
+}
+
+/* ---------- Chips: checkboxes with labels ---------- */
+
+.chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+	padding: 0;
+	list-style: none;
+}
+
+.chip {
+	position: relative;
+	display: flex;
+}
+
+/* Invisible but still there, so the chip is focusable and toggles like a checkbox. */
+.chip__input {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	opacity: 0;
+	cursor: pointer;
+}
+
+.chip__label {
+	display: inline-flex;
+	flex: 1;
+	align-items: center;
+	justify-content: center;
+	gap: 0.125rem;
+	min-width: var(--tap);
+	min-height: var(--tap);
+	padding: 0 var(--space-3);
+	border: 1px solid var(--color-border);
+	border-radius: 999px;
+	background: var(--color-surface);
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.chip__input:checked + .chip__label {
+	border-color: var(--color-accent);
+	background: var(--color-accent);
+	color: var(--color-on-accent);
+	font-weight: 600;
+}
+
+/* A check mark too, so color isn't the only cue. */
+.chip__input:checked + .chip__label::before {
+	content: "✓";
+}
+
+.chip__input:focus-visible + .chip__label {
+	outline: 3px solid var(--color-focus);
+	outline-offset: 2px;
+}
+
+/* ---------- Cards ---------- */
+
+.card {
+	padding: var(--space-4);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	background: var(--color-surface);
+	box-shadow: var(--shadow);
+}
+
+.warning {
+	padding: var(--space-3) var(--space-4);
+	border: 1px solid var(--color-warning-border);
+	border-left-width: 4px;
+	border-radius: var(--radius);
+	background: var(--color-warning-bg);
+}
+
+.warning::before {
+	content: "⚠ ";
+}
+
+/* ---------- Dialogs: full screen on phones ---------- */
+
+.dialog {
+	width: 100%;
+	max-width: 100%;
+	height: 100dvh;
+	max-height: 100dvh;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: var(--color-surface);
+	color: var(--color-text);
+}
+
+.dialog[open] {
+	display: flex;
+	flex-direction: column;
+}
+
+.dialog::backdrop {
+	background: rgb(0 0 0 / 0.5);
+}
+
+.dialog__form {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	min-height: 0;
+}
+
+.dialog__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3);
+	padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+	border-bottom: 1px solid var(--color-border);
+}
+
+.dialog__body {
+	flex: 1;
+	overflow-y: auto;
+	padding: var(--space-4);
+}
+
+.dialog__footer {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: var(--space-2);
+	padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+	border-top: 1px solid var(--color-border);
+}
+
+/* ---------- Message area ---------- */
+
+.messages {
+	position: sticky;
+	top: 0;
+	z-index: 20;
+	max-width: var(--page-width);
+	margin: 0 auto;
+	padding: 0 var(--gutter);
+}
+
+.message {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--space-2);
+	margin-top: var(--space-2);
+	padding: var(--space-1) var(--space-1) var(--space-1) var(--space-4);
+	border: 1px solid;
+	border-left-width: 4px;
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+}
+
+.message__text {
+	flex: 1;
+	padding: var(--space-2) 0;
+	white-space: pre-line;
+}
+
+.message--error {
+	border-color: var(--color-danger);
+	background: var(--color-danger-bg);
+}
+
+.message--error .message__text::before {
+	content: "⚠ ";
+}
+
+.message--success {
+	border-color: var(--color-success);
+	background: var(--color-success-bg);
+}
+
+.message--success .message__text::before {
+	content: "✓ ";
+}
+
+/* ---------- Sticky action bar: the main action stays in reach on phones ---------- */
+
+.action-bar {
+	position: sticky;
+	bottom: 0;
+	z-index: 10;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: var(--space-2);
+	margin: var(--space-5) calc(-1 * var(--gutter)) 0;
+	padding: var(--space-3) var(--gutter) calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+	border-top: 1px solid var(--color-border);
+	background: var(--color-surface);
+}
+
+/* Pushes what follows to the right, e.g. Delete on the left and Save on the right. */
+.action-bar__start {
+	margin-right: auto;
+}
+
+/* ---------- Frame images ---------- */
+
+/* A frame's 5:3 shape, whatever the width. */
+.thumb {
+	display: block;
+	width: 100%;
+	height: auto;
+	aspect-ratio: 5 / 3;
+	object-fit: cover;
+	border: 1px solid var(--color-border);
+	border-radius: calc(var(--radius) / 2);
+	background: #ffffff;
+}
+
+.thumb--placeholder {
+	display: grid;
+	place-items: center;
+	padding: var(--space-2);
+	background: repeating-linear-gradient(135deg, #ffffff 0 0.5rem, var(--color-bg) 0.5rem 1rem);
+	color: var(--color-muted);
+	font-size: var(--font-size-sm);
+	text-align: center;
+}
+
+.frame-image {
+	width: 100%;
+	height: auto;
+	border: 1px solid var(--color-border);
+	background: #ffffff;
+}
+
+.dialog__body--image {
+	display: grid;
+	place-items: center;
+	background: var(--color-bg);
+}
+
+/* ---------- Frames page ---------- */
+
+.empty {
+	display: grid;
+	justify-items: start;
+	gap: var(--space-3);
+}
+
+.frame-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+	gap: var(--space-3);
+	padding: 0;
+	list-style: none;
+}
+
+.frame-card {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+	padding: var(--space-2);
+}
+
+.frame-card__thumb {
+	display: block;
+	padding: 0;
+	border: 0;
+	border-radius: calc(var(--radius) / 2);
+	background: none;
+	cursor: zoom-in;
+}
+
+.frame-card__name {
+	font-size: var(--font-size-base);
+	overflow-wrap: anywhere;
+}
+
+.frame-card__usage {
+	flex: 1;
+}
+
+.frame-card__actions {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr));
+	gap: var(--space-2);
+}
+
+.frame-card__actions .button {
+	padding: 0 var(--space-2);
+}
+
+/* ---------- Upload page ---------- */
+
+.upload {
+	display: grid;
+	gap: var(--space-5);
+}
+
+.upload__preview {
+	display: grid;
+	align-content: start;
+	gap: var(--space-3);
+}
+
+/* "Actual pixels" can be wider than a phone: it scrolls inside, never the page. */
+.preview {
+	overflow-x: auto;
+}
+
+.preview__empty {
+	cursor: pointer;
+}
+
+.preview__canvas {
+	width: 100%;
+	height: auto;
+	border: 1px solid var(--color-border);
+	background: #ffffff;
+	image-rendering: pixelated;
+	cursor: grab;
+	/* Dragging moves the photo instead of scrolling the page. */
+	touch-action: none;
+}
+
+.preview__canvas:active {
+	cursor: grabbing;
+}
+
+.preview--actual .preview__canvas {
+	max-width: none;
+}
+
+.file-input:focus-visible + .button {
+	outline: 3px solid var(--color-focus);
+	outline-offset: 2px;
+}
+
+.fieldset {
+	display: grid;
+	/* Never wider than the page, whatever the content's min-content width. */
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--space-4);
+	min-width: 0;
+	padding: 0;
+	border: 0;
+}
+
+.fieldset legend {
+	margin-bottom: var(--space-2);
+	padding: 0;
+}
+
+.fieldset:disabled {
+	opacity: 0.55;
+}
+
+.field__row {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: var(--space-2);
+}
+
+.field__row output {
+	font-variant-numeric: tabular-nums;
+}
+
+.upload > .action-bar {
+	margin-top: 0;
+}
+
+/* ---------- Schedule page ---------- */
+
+.schedule {
+	display: grid;
+	gap: var(--space-4);
+}
+
+.schedule__side {
+	display: grid;
+	align-content: start;
+	gap: var(--space-4);
+	min-width: 0;
+}
+
+.rules-intro {
+	margin-bottom: var(--space-3);
+}
+
+/* A rule's color, the same as on the timeline. */
+.swatch {
+	width: 1rem;
+	height: 1rem;
+	border-radius: 0.25rem;
+}
+
+.rule-list {
+	padding: 0;
+	list-style: none;
+}
+
+.rule-row {
+	display: grid;
+	grid-template-columns: 1rem minmax(0, 1fr);
+	gap: var(--space-1) var(--space-3);
+	align-items: baseline;
+	padding: var(--space-3) 0;
+	border-top: 1px solid var(--color-border);
+}
+
+.rule-row .swatch {
+	align-self: start;
+	margin-top: 0.2rem;
+}
+
+.rule-row__name {
+	overflow-wrap: anywhere;
+}
+
+.rule-row__actions {
+	display: flex;
+	flex-wrap: wrap;
+	grid-column: 2;
+	justify-content: flex-end;
+	gap: var(--space-2);
+	margin-top: var(--space-1);
+}
+
+/* ---------- Now on the frame ---------- */
+
+.now h2 {
+	margin-bottom: var(--space-3);
+}
+
+.now__body {
+	display: grid;
+	grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+	gap: var(--space-3);
+	align-items: start;
+}
+
+.now__text {
+	display: grid;
+	gap: var(--space-1);
+}
+
+.now__rule {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	font-weight: 600;
+	overflow-wrap: anywhere;
+}
+
+.now__rule .swatch {
+	flex: none;
+}
+
+/* A dot and the word: color is never the only cue. */
+.now__status::before {
+	content: "● ";
+	color: var(--color-success);
+}
+
+.now__status--offline::before {
+	color: var(--color-danger);
+}
+
+/* ---------- Timeline (D39): days as rows, 24 hour columns ---------- */
+
+.timeline {
+	--timeline-names: 5.5rem;
+	--grid-hour: rgb(0 0 0 / 0.06);
+	--grid-block: rgb(0 0 0 / 0.18);
+	min-width: 0;
+}
+
+.timeline__header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-2);
+}
+
+.week-nav {
+	display: flex;
+	flex: 1 1 14rem;
+	align-items: center;
+	gap: var(--space-2);
+}
+
+.week-nav__label {
+	flex: 1;
+	font-size: var(--font-size-base);
+	font-variant-numeric: tabular-nums;
+	text-align: center;
+}
+
+.timeline__legend {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-1) var(--space-2);
+	margin: var(--space-2) 0 var(--space-3);
+}
+
+.legend-sample {
+	--rule-color: var(--color-muted);
+	display: inline-block;
+	width: 1.5rem;
+	height: 0.875rem;
+}
+
+.days {
+	display: grid;
+	gap: var(--space-4);
+	padding: 0;
+	list-style: none;
+}
+
+.day {
+	padding-top: var(--space-2);
+	border-top: 1px solid var(--color-border);
+}
+
+.day__header,
+.day__row {
+	display: grid;
+	grid-template-columns: var(--timeline-names) minmax(0, 1fr);
+	gap: var(--space-2);
+	align-items: center;
+}
+
+.day__label-box {
+	font-size: var(--font-size-sm);
+	white-space: nowrap;
+}
+
+.day--today .day__label-box {
+	color: var(--color-accent);
+}
+
+.day__today {
+	display: block;
+	font-size: var(--font-size-xs);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+/* A label every 3 hours, each at the start of its block. */
+.day__hours {
+	display: grid;
+	grid-template-columns: repeat(8, minmax(0, 1fr));
+	color: var(--color-muted);
+	font-size: var(--font-size-xs);
+	font-variant-numeric: tabular-nums;
+}
+
+.day__name {
+	overflow: hidden;
+	font-size: var(--font-size-sm);
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.day__row--air {
+	margin: var(--space-1) 0;
+	font-weight: 600;
+}
+
+.day__tracks {
+	padding: 0;
+	list-style: none;
+}
+
+/* The whole row opens the rule. */
+.track {
+	min-height: var(--tap);
+	border-radius: calc(var(--radius) / 2);
+	color: inherit;
+	text-decoration: none;
+}
+
+.track:hover {
+	background: var(--color-bg);
+}
+
+/* 24 hour columns: faint lines every hour, stronger every 3 hours. */
+.bar {
+	position: relative;
+	display: block;
+	height: 1.5rem;
+	overflow: hidden;
+	border: 1px solid var(--color-border);
+	background-color: #ffffff;
+	background-image:
+		linear-gradient(to right, var(--grid-block) 1px, transparent 1px),
+		linear-gradient(to right, var(--grid-hour) 1px, transparent 1px);
+	background-size: calc(100% / 8) 100%, calc(100% / 24) 100%;
+}
+
+.segment {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+}
+
+/* Solid where the rule is on air, hatched where it covers but a higher rule wins. */
+.segment--solid {
+	background: var(--rule-color);
+}
+
+.segment--hatched {
+	background: repeating-linear-gradient(135deg, var(--rule-color) 0 2px, transparent 2px 7px);
+	box-shadow: inset 0 0 0 1px var(--rule-color);
+}
+
+.now-line {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	width: 2px;
+	margin-left: -1px;
+	background: var(--color-text);
+	box-shadow: 0 0 0 1px #ffffff;
+}
+
+/* ---------- Rule form ---------- */
+
+.rule-summary {
+	padding: var(--space-3) var(--space-4);
+	border-left: 4px solid var(--color-accent);
+	border-radius: var(--radius);
+	background: var(--color-surface);
+	font-weight: 500;
+}
+
+.form-section {
+	padding: var(--space-4) 0;
+	border-bottom: 1px solid var(--color-border);
+}
+
+/* A fieldset's padding goes below its legend, so the space above goes on the legend instead. */
+fieldset.form-section {
+	padding-top: 0;
+}
+
+fieldset.form-section > legend {
+	padding-top: var(--space-4);
+}
+
+.form-section .section-title {
+	margin-bottom: var(--space-2);
+}
+
+/* A date and its block side by side, Clear under them. */
+.date-block {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: var(--space-2) var(--space-3);
+	align-items: end;
+}
+
+.date-block .input {
+	min-width: 0;
+}
+
+.date-block__clear {
+	grid-column: 1 / -1;
+	justify-self: start;
+}
+
+.pattern__every {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-2);
+}
+
+.pattern__body {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--space-3);
+}
+
+/*
+ * 7 columns, a week per row, wherever 7 chips of 44 px fit (from 360 px); 6 on the narrowest phones rather
+ * than chips too small to tap.
+ */
+.chips--days {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(var(--tap), 1fr));
+	gap: var(--space-1);
+	/* A definite width: auto-fill would otherwise count the columns from max-width. */
+	width: 100%;
+	max-width: 22rem;
+}
+
+.chips--days .chip__label {
+	padding: 0;
+	border-radius: var(--radius);
+}
+
+.rule-frames {
+	display: grid;
+	gap: var(--space-2);
+	margin: var(--space-3) 0;
+	padding: 0;
+	list-style: none;
+}
+
+/* The buttons wrap under the name when it would get less than 6rem, on the narrowest phones. */
+.rule-frame {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-2) var(--space-3);
+	padding: var(--space-2);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	background: var(--color-surface);
+}
+
+.rule-frame__thumb {
+	flex: none;
+	width: 4rem;
+}
+
+.rule-frame__name {
+	flex: 1 1 6rem;
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.rule-frame__actions {
+	display: flex;
+	gap: var(--space-1);
+	margin-left: auto;
+}
+
+.rule-form > .warning {
+	margin: var(--space-3) 0;
+}
+
+.picker-item {
+	display: grid;
+	gap: var(--space-2);
+	width: 100%;
+	height: 100%;
+	padding: var(--space-2);
+	color: inherit;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+	touch-action: manipulation;
+}
+
+.picker-item:hover {
+	border-color: var(--color-accent);
+}
+
+.picker-item__image {
+	position: relative;
+	display: block;
+}
+
+.picker-item__name {
+	overflow-wrap: anywhere;
+}
+
+/* How many times the frame is in the list. */
+.badge {
+	position: absolute;
+	top: var(--space-1);
+	right: var(--space-1);
+	min-width: 1.75rem;
+	padding: 0.125rem var(--space-2);
+	border-radius: 999px;
+	background: var(--color-accent);
+	color: var(--color-on-accent);
+	font-size: var(--font-size-sm);
+	font-weight: 700;
+	text-align: center;
+}
+
+/* ---------- Large phones and tablets ---------- */
+
+@media (min-width: 40rem) {
+	.dialog {
+		width: min(40rem, 100% - 2rem);
+		height: auto;
+		max-height: calc(100dvh - 4rem);
+		margin: auto;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		box-shadow: 0 10px 30px rgb(0 0 0 / 0.2);
+	}
+
+	.dialog--wide {
+		width: min(60rem, 100% - 2rem);
+	}
+
+	.date-block {
+		grid-template-columns: 12rem 12rem auto;
+	}
+
+	.date-block__clear {
+		grid-column: auto;
+	}
+}
+
+/* ---------- Desktop ---------- */
+
+@media (min-width: 64rem) {
+	.page {
+		padding-top: var(--space-5);
+	}
+
+	.action-bar {
+		position: static;
+		margin: var(--space-5) 0 0;
+		padding: 0;
+		border: 0;
+		background: none;
+	}
+
+	/* The now card and the rules on the left, the timeline on the right. */
+	.schedule {
+		grid-template-columns: 24rem minmax(0, 1fr);
+		align-items: start;
+		gap: var(--space-5);
+	}
+
+	/* The days scroll inside the timeline, which stays in view, so the page can open on today. */
+	.timeline {
+		--timeline-names: 8rem;
+		position: sticky;
+		top: var(--space-4);
+		display: flex;
+		flex-direction: column;
+		max-height: calc(100dvh - 2 * var(--space-4));
+	}
+
+	.days {
+		min-height: 0;
+		overflow-y: auto;
+	}
+
+	/* The preview on the left, the controls on the right. */
+	.upload {
+		grid-template-columns: minmax(0, 1fr) 22rem;
+		grid-template-areas:
+			"preview controls"
+			"preview actions";
+		align-items: start;
+		column-gap: var(--space-6);
+	}
+
+	.upload__preview {
+		position: sticky;
+		top: var(--space-4);
+		grid-area: preview;
+	}
+
+	.upload__controls {
+		grid-area: controls;
+	}
+
+	.upload > .action-bar {
+		grid-area: actions;
+	}
+}

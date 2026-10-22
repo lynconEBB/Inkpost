@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Frames')}"></head>
+<body>
+<th:block th:replace="~{layout :: header('frames')}"></th:block>
+<main class="page">
+	<div class="page-title">
+		<h1>Frames</h1>
+		<a class="button button--primary" id="upload-link" th:href="@{/frames/new}" hidden>Upload photo</a>
+	</div>
+	<p class="muted" id="loading">Loading the frames…</p>
+	<div class="card empty" id="empty" hidden>
+		<p>No frames yet. A frame is a photo turned into black and white pixels for the e-paper.</p>
+		<a class="button button--primary" th:href="@{/frames/new}">Upload photo</a>
+	</div>
+	<ul class="frame-grid" id="frame-grid" aria-label="Frames"></ul>
+</main>
+
+<template id="frame-card">
+	<li class="card frame-card">
+		<button type="button" class="frame-card__thumb" data-action="view">
+			<img class="thumb" loading="lazy" width="800" height="480" alt="">
+		</button>
+		<h2 class="frame-card__name"></h2>
+		<p class="hint frame-card__usage"></p>
+		<div class="frame-card__actions">
+			<button type="button" class="button" data-action="rename">Rename</button>
+			<button type="button" class="button button--danger" data-action="delete">Delete</button>
+		</div>
+	</li>
+</template>
+
+<dialog class="dialog dialog--wide" id="image-dialog" aria-labelledby="image-dialog-title">
+	<div class="dialog__header">
+		<h2 id="image-dialog-title"></h2>
+		<button type="button" class="button button--icon button--plain" data-close aria-label="Close">✕</button>
+	</div>
+	<div class="dialog__body dialog__body--image">
+		<img class="frame-image" id="image-dialog-image" width="800" height="480" alt="">
+	</div>
+</dialog>
+
+<dialog class="dialog" id="rename-dialog" aria-labelledby="rename-dialog-title">
+	<form class="dialog__form" id="rename-form" novalidate>
+		<div class="dialog__header">
+			<h2 id="rename-dialog-title">Rename frame</h2>
+			<button type="button" class="button button--icon button--plain" data-close aria-label="Close">✕</button>
+		</div>
+		<div class="dialog__body">
+			<div class="field">
+				<label class="label" for="rename-name">Name</label>
+				<input class="input" id="rename-name" name="name" type="text" maxlength="100" required autocomplete="off">
+				<p class="field-error" data-error-for="name" hidden></p>
+			</div>
+		</div>
+		<div class="dialog__footer">
+			<button type="button" class="button" data-close>Cancel</button>
+			<button type="submit" class="button button--primary" id="rename-save">Save</button>
+		</div>
+	</form>
+</dialog>
+
+<script type="module" th:src="@{/js/frames.js}"></script>
+</body>
+</html>

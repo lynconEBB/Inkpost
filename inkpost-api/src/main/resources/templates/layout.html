@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<!-- Fragments every page uses (D42); this file is never rendered by itself. -->
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title th:text="|${title} · inkpost|">inkpost</title>
+	<link rel="icon" th:href="@{/favicon.svg}" type="image/svg+xml">
+	<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<!-- page: "schedule" or "frames", the link marked as the current page. -->
+<th:block th:fragment="header(page)">
+	<header class="site-header">
+		<div class="site-header__inner">
+			<a class="site-header__brand" th:href="@{/}">inkpost</a>
+			<nav class="site-nav" aria-label="Main">
+				<a class="site-nav__link" th:href="@{/}" th:aria-current="${page == 'schedule'} ? 'page'">Schedule</a>
+				<a class="site-nav__link" th:href="@{/frames}" th:aria-current="${page == 'frames'} ? 'page'">Frames</a>
+			</nav>
+		</div>
+	</header>
+	<!-- The one message area for errors and confirmations (ui.js). -->
+	<div class="messages" id="messages" aria-live="polite"></div>
+	<template id="message-template">
+		<div class="message">
+			<p class="message__text"></p>
+			<button type="button" class="button button--icon button--plain message__close" aria-label="Dismiss">✕</button>
+		</div>
+	</template>
+</th:block>
+</body>
+</html>

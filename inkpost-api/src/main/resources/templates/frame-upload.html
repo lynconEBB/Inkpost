@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Upload a photo')}"></head>
+<body>
+<th:block th:replace="~{layout :: header('frames')}"></th:block>
+<main class="page">
+	<h1 class="page-title">Upload a photo</h1>
+	<form class="upload" id="upload-form" novalidate>
+		<section class="upload__preview" aria-label="Preview">
+			<div class="preview" id="preview-box">
+				<label class="thumb thumb--placeholder preview__empty" for="photo" id="preview-empty">
+					Choose a photo to start
+				</label>
+				<canvas class="preview__canvas" id="preview" width="800" height="480" tabindex="0" hidden
+					aria-label="The frame. Drag the photo, or use the arrow keys, to choose the part that's kept."></canvas>
+			</div>
+			<p class="hint" id="crop-hint" hidden>Drag the photo to choose the part that's kept.</p>
+			<div class="button-row" role="group" aria-label="Preview size">
+				<button type="button" class="button" id="fit" aria-pressed="true">Fit</button>
+				<button type="button" class="button" id="actual" aria-pressed="false">Actual pixels</button>
+			</div>
+		</section>
+
+		<section class="upload__controls stack" aria-label="Settings">
+			<div class="field">
+				<input class="visually-hidden file-input" type="file" id="photo" accept="image/*">
+				<label class="button" for="photo" id="choose">Choose photo</label>
+				<p class="hint" id="file-name" hidden></p>
+			</div>
+
+			<fieldset class="fieldset" id="adjust" disabled>
+				<legend class="label">Adjust</legend>
+				<div class="field">
+					<div class="field__row">
+						<label for="brightness">Brightness</label>
+						<output id="brightness-value" for="brightness">0</output>
+					</div>
+					<input class="range" type="range" id="brightness" min="-100" max="100" step="1" value="0">
+				</div>
+				<div class="field">
+					<div class="field__row">
+						<label for="contrast">Contrast</label>
+						<output id="contrast-value" for="contrast">0</output>
+					</div>
+					<input class="range" type="range" id="contrast" min="-100" max="100" step="1" value="0">
+				</div>
+				<div class="field">
+					<label for="method">Dithering</label>
+					<select class="select" id="method">
+						<option value="floyd-steinberg" selected>Floyd–Steinberg</option>
+						<option value="atkinson">Atkinson</option>
+						<option value="threshold">50% threshold</option>
+					</select>
+				</div>
+				<div>
+					<button type="button" class="button" id="reset">Reset</button>
+				</div>
+			</fieldset>
+
+			<div class="field">
+				<label class="label" for="name">Name</label>
+				<input class="input" type="text" id="name" maxlength="100" required autocomplete="off">
+				<p class="field-error" data-error-for="name" hidden></p>
+			</div>
+		</section>
+
+		<div class="action-bar">
+			<a class="button" th:href="@{/frames}">Cancel</a>
+			<button type="submit" class="button button--primary" id="upload" disabled>Upload</button>
+		</div>
+	</form>
+</main>
+<script type="module" th:src="@{/js/upload.js}"></script>
+</body>
+</html>

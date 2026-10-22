@@ -49,6 +49,18 @@ tasks.withType<Test> {
 	jvmArgs(enableNativeAccess)
 }
 
+// The web UI's DOM-free JS modules (D42), on Node's own test runner; Node is pinned in mise.toml.
+val jsTest by tasks.registering(Exec::class) {
+	group = LifecycleBasePlugin.VERIFICATION_GROUP
+	description = "Runs the JS tests in src/test/js with node --test."
+	// Node expands the glob itself; it doesn't search a directory.
+	commandLine("node", "--test", "src/test/js/**/*.test.js")
+}
+
+tasks.check {
+	dependsOn(jsTest)
+}
+
 tasks.bootRun {
 	jvmArgs(enableNativeAccess)
 }

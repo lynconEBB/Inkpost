@@ -288,9 +288,19 @@ higher rules; its costs (no exact preview of the future, a frame lost on a rare 
 for a gift.
 
 ### D39. Schedule timeline: one track per rule; the server computes, the page only draws
-The web UI shows the schedule as tracks, like a video editor: one track per rule in priority order,
-the highest on top, so an upper track shows over the lower ones. A row above the tracks shows what
-is on air. Where a rule covers an hour but a higher rule wins, its track is hatched.
+The web UI shows the schedule a week at a time, Monday 00:00 to the next Monday 00:00, with **days as
+rows**, so it scrolls vertically and fits a phone without scrolling sideways. Each day has 24 hour
+columns, labeled every 3 hours, and tracks like a video editor's:
+- an **on air** row, in the color of the rule that wins each hour;
+- one track per rule that covers part of that day, highest first, so an upper track shows over the
+  lower ones. A track is solid where its rule is on air, and hatched where it covers the hour but a
+  higher rule wins. Rule names sit in a label column, cut short on phones.
+
+Tapping a track opens its rule. Today is marked, with a line at the current time. On a desktop the
+days scroll inside the timeline, which opens on today; on a phone the page itself scrolls, so it opens
+at the top, with the "now on the frame" card first, and the "Today" button goes to today.
+Brasília has no daylight saving time (D27), so day *k* of a range starts at `from + k × 24 h`
+(`timeline-days.js`).
 
 ```
 GET /api/timeline?from=2026-10-19T00:00:00&to=2026-10-26T00:00:00
@@ -327,7 +337,8 @@ GET /api/timeline?from=2026-10-19T00:00:00&to=2026-10-26T00:00:00
 - `version` is a counter incremented on every rule change (create, edit, delete, reorder, frame
   list). A response with a different version drops everything loaded and reloads the visible range.
   Device requests don't change it: the timeline shows sets of frames, not the exact frame (D38).
-- Rule colors come from a palette by rule id; they are not stored.
+- Rule colors come from a palette of 8 by rule id (`colors.js`), with the default rule always gray;
+  they are not stored. The rule list uses the same colors.
 
 "Now on the frame" card: `GET /api/device` returns the last device request (time, rule, frame),
 written in the same transaction that advances the rotation (D38). With no request for more than
@@ -379,6 +390,90 @@ file, and tests need no Docker. Postgres would add a server to run, dumps and Te
 in one place. A server that fixed up images would show something the editor didn't preview; the
 browser is the only renderer (D19).
 
+### D42. Web UI: Thymeleaf shells, plain JS modules that call the API
+- **Shells:** Thymeleaf renders each page's markup, and a plain JS module (D20) fills it from
+  `/api/**`. There are no server-rendered forms: the API already has every endpoint the pages need.
+- **Page controllers:** one `@Controller` per domain (`SchedulePageController`, `FramePageController`)
+  only returns the view name, plus the rule ID on the edit page. They stay out of the OpenAPI docs.
+- **Errors:** `ApiExceptionHandler` only handles `@RestController`s, so API errors stay Problem Details
+  (D41), while page errors (an unknown URL, a 500) get Boot's error page, `templates/error.html`.
+  A too large upload fails before Spring chooses a handler, so `UploadSizeExceptionHandler` keeps
+  that `413` in Problem Details. Other errors of that kind, like an unknown `/api/` URL, get Boot's
+  JSON error: only a bug or a hand-written request makes them.
+- **Templates:** `layout.html` holds the fragments `head(title)` and `header(page)`, with no Layout
+  Dialect. Repeated markup (rule rows, frame cards, timeline days) lives in `<template>` elements that
+  the JS clones, so the JS builds no HTML strings. IDs reach the JS as `data-*` attributes.
+- **Scripts:** `<script type="module">`, importing each other by relative path. No bundler, no npm
+  packages, no framework.
+- **Logic stays out of the DOM:** everything that can be wrong (dates, summaries, timeline days, crop,
+  dithering) lives in DOM-free modules, tested with `node --test`.
+- **Times:** always shown in Brasília time (D39), and request date-times are built as local strings
+  straight from the inputs (D41), never through `Date`.
+- **English:** the UI is in English, with the strings inline in the templates and the JS, and no
+  i18n machinery.
+- **Caching:** static files are sent with `Cache-Control: no-cache`. Cloudflare caches `.js` and
+  `.css` by extension, and a deploy has to show up right away.
+- Pages and static files sit behind Cloudflare Access like `/api/**` (D16).
+
+**Why:** one app and one deploy (D20), and the pages only draw what the API computes (D39). Plain
+modules need no build step, and the DOM-free ones are tested without a browser.
+
+### D43. Responsive: phone first
+Every page works on a phone and on a desktop.
+- **Breakpoints:** the base CSS is the phone layout. `min-width: 40rem` is for large phones and
+  tablets, and `min-width: 64rem` for desktops, with two columns on the schedule and upload pages.
+- **Width:** from 320 px, with no horizontal scrolling. Content is at most `72rem` wide, centered, with
+  `1rem` gutters. Sizes are in `rem` and grids are fluid; the only fixed pixel size is the canvas's
+  800×480 backing size.
+- **Touch:** tap targets are at least 44×44 px, nothing works only on hover, inputs are at least
+  16 px (or iOS zooms in on focus), and dates and selects are native inputs, so phones show their own
+  pickers. Zoom is never disabled. Where 44 px doesn't fit, the layout gives way, never the target: the
+  days of the month are 7 chips a row from 360 px, and 6 on a 320 px phone.
+- **Dialogs** are full screen on phones (`100dvh`) and a centered box from `40rem`.
+- **Main action:** Save and Upload sit in a sticky bar at the bottom on phones, padded with
+  `env(safe-area-inset-bottom)`.
+- **Accessibility:** every input has a label, focus is visible, and color is never the only cue.
+- Checked at 320×568, 390×844, 768×1024, 1280×800 and 1920×1080.
+
+**Why:** the content changes throughout the day, from wherever the owner is, so a phone is the
+first screen to design for.
+
+### D44. Photos become frames in the browser
+The upload page turns a photo into the 800×480 PNG of pure black and white that D41 accepts; the
+browser is the only renderer (D19).
+- **Decode:** `createImageBitmap` with the EXIF orientation applied, so phone photos stay upright. A
+  file the browser can't decode (e.g. HEIC on a desktop) gets "Can't read this image, use a JPEG or
+  PNG".
+- **Crop to fill:** the photo is scaled to cover 800×480 and centered. Dragging (Pointer Events, mouse
+  and touch) moves it, clamped so the frame is always covered, so only one axis moves. No zoom or
+  rotation.
+- **Adjust:** brightness and contrast (−100 … 100), and the dithering: Floyd–Steinberg (the default,
+  serpentine), Atkinson, or a 50% threshold. The preview is the dithered result; while dragging it
+  shows the grayscale crop and dithers on release.
+- **Upload:** every pixel exactly 0 or 255 with alpha 255, then `canvas.toBlob(…, "image/png")`, sent
+  with the name (by default the file name) to `POST /api/frames`.
+- `dither.js` works on plain arrays and knows nothing about the DOM, so the editor's photo import
+  reuses it (D21).
+
+**Why:** what the preview shows is exactly what the frame shows. Dithering an 800×480 crop takes a few
+milliseconds, so the sliders can re-dither on every animation frame.
+
+### D45. The rule form asks for the last block shown
+A rule's end is exclusive (D38): a rule from the 20th to the 29th ends on 30 Nov at 00:00. The form's
+"Until" asks instead for the last date and block the rule covers, inclusive (21:00–24:00 by default),
+and sends `endAt` = that block + 3 h. On load it shows `endAt − 3 h`.
+- "Starts" is a date and the block the rule starts with (00:00 by default). No date means no start, or
+  no end (`null`).
+- The summaries (`rule-summary.js`, the same on the rule list and the form) read the same way: an end at
+  midnight shows the day before ("20 Nov → 29 Nov"), any other end its time ("29 Nov 12:00").
+- The pattern fields are chips: the time of day is the 8 blocks (D26), sent as their hours. A field with
+  every chip checked is sent as `null`, every value (D41), and collapses to one line ("Every month ·
+  Change"). None checked is an error in the form, never sent.
+
+**Why:** "until 29 Nov" includes the 29th to anyone who reads it, and asking for the day after would be
+off by one in every rule. The stored end stays exclusive, so the rule semantics (D38) and the API (D41)
+don't change.
+
 ## Guiding principle
 
 Prefer doing a few things well over supporting many features or edge cases. When in doubt,
@@ -387,7 +482,4 @@ pick the option with fewer cases to handle.
 ## Open questions
 
 - Which font and which 3 sizes (prototype).
-- Who uses the web UI (just the owner, or the girlfriend too)?
-- Timeline layout (D39): days as rows with the 8 blocks as columns (fits a phone), or horizontal
-  tracks (desktop)?
 - Backups of the SQLite file (D40).

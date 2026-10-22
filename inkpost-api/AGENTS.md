@@ -5,12 +5,17 @@ Spring Boot app that serves the frame's images and the web UI. Read the root `AG
 
 ## Running
 
-The JDK is pinned with mise (`mise.toml`, Temurin 27). Run Gradle through it:
+The JDK and Node are pinned with mise (`mise.toml`: Temurin 27, Node 24). Run Gradle through it:
 
-- `mise exec -- ./gradlew test`
+- `mise exec -- ./gradlew check`: the Java tests and the JS tests
+- `mise exec -- ./gradlew test`: the Java tests only
+- `mise exec -- ./gradlew jsTest`: the JS tests only, which is
+  `mise exec -- node --test "src/test/js/**/*.test.js"` (Node expands the glob; it doesn't search a
+  directory)
 - `mise exec -- ./gradlew bootRun`, with the device key (D8) in `INKPOST_DEVICE_KEY`: the app doesn't
   start without it. Tests fall back to a key in `src/test/resources/config/`, and send whichever key is
   configured. Then:
+  - `/`: the web UI
   - `/actuator/health`: health check
   - `/swagger-ui.html`: API docs (springdoc); "Authorize" with the device key to call `/api/image`
 
@@ -30,7 +35,7 @@ Code is grouped by domain (`frame/`, `schedule/`, `testimage/`), and inside each
 
 | package | contents |
 |---|---|
-| `controller` | `@RestController`s |
+| `controller` | `@RestController`s, and the pages' `@Controller`s (`*PageController`) |
 | `service` | `@Service`s, and the plain logic classes they use |
 | `repository` | Spring Data repositories |
 | `entity` | JPA entities |
@@ -42,6 +47,31 @@ Code is grouped by domain (`frame/`, `schedule/`, `testimage/`), and inside each
 - Cross-cutting setup lives in the top-level `config/`.
 - Code every domain shares lives in the top-level `common/`, by kind (`common/exception/`).
 - Tests mirror the package of the class they test.
+
+## Web UI (D42, D43)
+
+- **Page controllers** (`*PageController`, one per domain, in `controller`) only return a view name,
+  plus IDs the page needs as model attributes. All the data comes from `/api/**`.
+- **Templates** are in `src/main/resources/templates/`. Every page takes `layout.html`'s fragments:
+  `head(title)` for `<head>`, and `header(page)` for the header, the nav and the message area.
+  `error.html` is Boot's error page for the pages.
+- **Static files** are in `src/main/resources/static/`: one hand-written stylesheet, `css/app.css`,
+  and the JS modules in `js/`.
+- **JS conventions:**
+  - Plain ES modules, loaded with `<script type="module" th:src="@{/js/...}">` and importing each
+    other by relative path. No bundler, no npm packages, no framework.
+  - Every API call goes through `api.js` (`api(path, { method, json, body })`), which throws an
+    `ApiError` built from the Problem Details. `ui.js` shows messages and field errors, and
+    `busy(button, task)` disables a button while its request runs.
+  - Build no HTML strings: clone `<template>` elements from the page (`ui.clone(id)`) and set
+    `textContent`. IDs reach the JS as `data-*` attributes (`th:data-rule-id="${ruleId}"`).
+  - Logic that can be wrong goes in a DOM-free module (`time.js`, …) with a test in `src/test/js/`
+    (`<module>.test.js`, `node:test`). Page modules only wire the DOM to them.
+  - Times: through `time.js`, always in Brasília. Request date-times are local strings built from the
+    inputs (`2026-11-20T06:00:00`), never through the browser's `Date`.
+- **CSS** is phone first: base rules for phones, then `@media (min-width: 40rem)` and
+  `(min-width: 64rem)`. Sizes in `rem`, tap targets at least `var(--tap)` (44 px), inputs at least
+  16 px.
 
 ## Time
 
