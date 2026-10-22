@@ -6,12 +6,12 @@
 <main class="page">
 	<div class="page-title">
 		<h1>Frames</h1>
-		<a class="button button--primary" id="upload-link" th:href="@{/frames/new}" hidden>Upload photo</a>
+		<a class="button button--primary" id="new-link" th:href="@{/frames/new}" hidden>New frame</a>
 	</div>
 	<p class="muted" id="loading">Loading the frames…</p>
 	<div class="card empty" id="empty" hidden>
-		<p>No frames yet. A frame is a photo turned into black and white pixels for the e-paper.</p>
-		<a class="button button--primary" th:href="@{/frames/new}">Upload photo</a>
+		<p>No frames yet. A frame is a picture in black and white pixels for the e-paper: photos, drawings, or both.</p>
+		<a class="button button--primary" th:href="@{/frames/new}">New frame</a>
 	</div>
 	<ul class="frame-grid" id="frame-grid" aria-label="Frames"></ul>
 </main>

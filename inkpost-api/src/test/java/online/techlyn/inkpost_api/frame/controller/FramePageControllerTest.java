@@ -29,11 +29,12 @@ class FramePageControllerTest {
 	}
 
 	@Test
-	void theUploadPage() throws Exception {
+	void theEditor() throws Exception {
 		mockMvc.perform(get("/frames/new"))
 				.andExpect(status().isOk())
-				.andExpect(view().name("frame-upload"))
-				.andExpect(content().string(containsString("<script type=\"module\" src=\"/js/upload.js\"></script>")));
+				.andExpect(view().name("frame-editor"))
+				.andExpect(content().string(containsString("<script type=\"module\" src=\"/js/editor.js\"></script>")))
+				.andExpect(content().string(containsString("aria-current=\"page\">Frames</a>")));
 	}
 
 }

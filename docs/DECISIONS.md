@@ -219,8 +219,8 @@ editing a frame automatically triggers a refresh. Tolerate a `W/` (weak) prefix 
 may add.
 
 ### D18. Pixel-only editor (Paint-style), no editable objects
-Everything drawn (pixels, shapes, fills, text) is rasterized into the 800×480 1-bit bitmap
-immediately. No object model, selection, or re-editable text.
+Everything drawn (pixels, shapes, fills, text) is rasterized immediately, into its layer (D47). No
+object model, selection, or re-editable text. Only photos stay adjustable until the frame is saved (D47).
 **Why:** Canva-style editable objects are several times the work.
 
 ### D19. The browser is the only renderer
@@ -235,9 +235,8 @@ All pages are server-rendered Thymeleaf. The editor page loads a plain JS module
 **Why:** one app, one deploy, Cloudflare Access covers everything; a framework doesn't help with
 imperative canvas drawing.
 
-### D21. Single bitmap, no layers
-The editor works on one 800×480 1-bit bitmap with undo. Consequence: an imported photo is
-dithered once (with the slider settings) and becomes plain pixels; to re-dither, re-import.
+### D21. Replaced by D47 (was: single bitmap, no layers)
+One bitmap couldn't make collages or draw over a photo and still move or adjust the photo.
 
 ### D22. One font, three sizes
 Text uses a single font family with only three predefined sizes. Exact font and sizes to be
@@ -473,16 +472,16 @@ browser is the only renderer (D19).
 - **Decode:** `createImageBitmap` with the EXIF orientation applied, so phone photos stay upright. A
   file the browser can't decode (e.g. HEIC on a desktop) gets "Can't read this image, use a JPEG or
   PNG".
-- **Crop to fill:** the photo is scaled to cover 800×480 and centered. Dragging (Pointer Events, mouse
-  and touch) moves it, clamped so the frame is always covered, so only one axis moves. No zoom or
-  rotation.
+- **Place:** a photo is a layer (D47). It starts scaled to cover 800×480 and centered, then moves
+  freely and is resized (D48). No rotation. (It used to be clamped so the frame stayed covered, so only
+  one axis moved.)
 - **Adjust:** brightness and contrast (−100 … 100), and the dithering: Floyd–Steinberg (the default,
   serpentine), Atkinson, or a 50% threshold. The preview is the dithered result; while dragging it
-  shows the grayscale crop and dithers on release.
+  shows the grayscale crop and dithers on release. The same goes for resizing.
 - **Upload:** every pixel exactly 0 or 255 with alpha 255, then `canvas.toBlob(…, "image/png")`, sent
   with the name (by default the file name) to `POST /api/frames`.
-- `dither.js` works on plain arrays and knows nothing about the DOM, so the editor's photo import
-  reuses it (D21).
+- `dither.js` works on plain arrays and knows nothing about the DOM. Each photo is dithered by itself,
+  only the part inside the frame (D47).
 
 **Why:** what the preview shows is exactly what the frame shows. Dithering an 800×480 crop takes a few
 milliseconds, so the sliders can re-dither on every animation frame.
@@ -502,6 +501,63 @@ and sends `endAt` = that block + 3 h. On load it shows `endAt − 3 h`.
 **Why:** "until 29 Nov" includes the 29th to anyone who reads it, and asking for the day after would be
 off by one in every rule. The stored end stays exclusive, so the rule semantics (D38) and the API (D41)
 don't change.
+
+### D47. Layers while editing, flattened on save
+The editor (`/frames/new`) works on a list of layers over a white background (the background isn't a
+layer). They only live in the page: Save flattens them into the PNG of D41, so the API and the stored
+frame don't change, and a saved frame can't be edited again.
+- **Drawing layer:** a frame-sized array, one value per pixel: clear (see-through), black or white.
+  Strokes and shapes become pixels at once (D18).
+- **Photo layer:** the decoded photo with a center, a scale (1 = covers the frame) and its brightness,
+  contrast and dithering (D44), all adjustable until Save. A photo is an opaque rectangle in whole
+  pixels.
+- **Composite:** white, then every visible layer from the bottom up. A drawing's black and white
+  pixels cover what's below and its clear pixels let it through; a photo covers the part of the frame
+  it's on. Hidden layers are left out of the saved frame.
+- **Each photo is dithered by itself,** only its part inside the frame, so drawings stay crisp over
+  photos. The page keeps each photo's crop and dithered pixels until its place, size or adjustments
+  change.
+- A new editor has one empty drawing layer. Leaving the page with changes asks first
+  (`beforeunload`): the layers are kept nowhere else.
+
+**Why:** collages and drawing over photos, with no change to the API or the format (D41). Only the
+photos stay adjustable, which is where re-doing work hurts; shapes stay pixels (D18).
+
+### D48. Editor: view, tools and layout
+- **View:** the 800×480 canvas is scaled by CSS (`image-rendering: pixelated`) inside an area that
+  scrolls in both directions. Zooms: Fit, and 1×, 2×, 4×, 8×, 16× screen pixels per frame pixel (1× is
+  the old "Actual pixels"). A step skips a zoom within 25 % of the current one. Ctrl/⌘ + wheel zooms
+  where the pointer is.
+- **Scrolling the view by dragging:** the Hand tool, or holding Space, or the middle button, with any
+  tool. (On the old upload page dragging always moved the photo, so a zoomed view could only scroll
+  sideways with the scrollbar.)
+- **Tools:** Move (V), Hand (H), Pencil (B), Eraser (E), Line (L), Rectangle (R), Ellipse (O) and Fill
+  (G). The color is black or white (X switches). Pencil, eraser and line take a square brush of 1, 2,
+  4 or 8 px; rectangles and ellipses take a border of 0–16 px in the color and a fill (none, black,
+  white). Shapes show while dragged and become pixels when let go. No Shift-constrained shapes.
+- Moving a drawing layer moves its pixels when let go: what goes past the frame's edge is lost (undo
+  brings it back). Moving a photo only changes its center. Arrow keys move 1 px, Shift + arrow 10 px.
+- **Fill** only looks at the active layer's pixels, through the 4 neighbours (never diagonally).
+- **Drawing on a photo, or with no layer,** draws on a new drawing layer above it.
+- **Layout:** on phones everything is stacked: tools, frame, zoom, layers, layer settings, frame name,
+  then the sticky Save bar. From 64rem: tools on the left, the frame in the middle at the window's
+  height, layers and settings on the right. The editor page uses the whole window width, not 72rem
+  (D43).
+
+**Why:** a simple Photoshop: the tools a pixel-art frame and a collage need, and nothing that needs an
+object model (D18).
+
+### D49. Undo = snapshots of immutable layer lists
+Each step is the whole layer list. Layers are never changed in place: a stroke draws on a copy of
+its layer's pixels, which replaces the layer when let go, so a step only costs what changed (a drawing
+layer is 384 KB). At most 50 steps back.
+- Steps: a stroke, shape or fill, a move, adding, deleting or reordering a layer, showing or hiding
+  one, a rename, and each photo adjustment. A slider is one step when let go, not one per value.
+- Not steps: the active layer, the tool, the color and the zoom. If an undo removes the active layer,
+  the top one becomes active.
+- Ctrl+Z, Ctrl+Shift+Z / Ctrl+Y, and toolbar buttons for phones. Shortcuts are ignored while typing.
+
+**Why:** with immutable layers, undo is just keeping the previous list, with no inverse operations.
 
 ## Guiding principle
 
