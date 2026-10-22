@@ -95,6 +95,9 @@ static uint32_t seconds_until_next_wake(void)
 
 void app_main(void)
 {
+    // A reset or power-on left the panel powered while the board booted (D33). Deep-sleep wakes
+    // keep it off, and their first init always works.
+    ink_display_power_off();
     for (int attempt = 1; attempt <= ATTEMPTS; attempt++) {
         if (update() == ESP_OK) {
             break;

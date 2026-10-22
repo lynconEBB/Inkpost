@@ -135,6 +135,12 @@ The panel is powered through the HAT's PWR pin only between init and deinit.
 **Why:** the cycle (D1) needs nothing more; Waveshare warns against leaving a panel powered.
 After deinit, PWR (GPIO32, an RTC pin) is held low with `gpio_hold_en`, so the panel stays
 unpowered through deep sleep instead of the pin floating.
+A reset or a power-on clears that hold, and PWR floats high while the board boots, powering the
+panel with nothing driving it. After that, the first init often timed out with the panel stuck
+busy (6 of 9 resets on the frame, some failing all 3 attempts), while every deep-sleep wake drew.
+So `app_main` starts with `ink_display_power_off()`, which cuts and holds PWR before Wi-Fi: the
+panel is only powered undriven for the ~0.6 s before `app_main`, then stays off until init.
+With it, 6 of 6 resets drew on the first attempt.
 
 ### D34. Display failures are errors, never a silent success
 SPI to the panel is one-way, so failures are detected through the BUSY pin: the panel never

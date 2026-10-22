@@ -48,3 +48,9 @@ esp_err_t ink_display_draw_checker(void);
 // released even if the sleep commands fail; that error is still returned.
 // Safe to call when not initialized.
 esp_err_t ink_display_deinit(void);
+
+// Cuts the panel's power and holds it off, like deinit, without talking to the panel.
+// After a reset or a power-on the PWR pin floats high while the board boots, powering the
+// panel with nothing driving it; call this first thing in app_main. Does nothing while
+// initialized.
+void ink_display_power_off(void);
