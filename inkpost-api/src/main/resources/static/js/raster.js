@@ -21,8 +21,47 @@ export function stamp(pixels, x, y, size, color) {
 	}
 }
 
-/** The brush stamped on every pixel from one point to the other (Bresenham), so a line has no gaps. */
+/** The brush stamped on every pixel from one point to the other, so a line has no gaps. */
 export function line(pixels, from, to, size, color) {
+	walk(from, to, (x, y) => stamp(pixels, x, y, size, color));
+}
+
+/**
+ * The cell, in a grid of `size`-pixel squares from the frame's top-left corner, that a point is in: the
+ * Pixel tool's (D48). Cells are counted from 0, and can be outside the frame.
+ */
+export function cellOf(point, size) {
+	return { x: Math.floor(point.x / size), y: Math.floor(point.y / size) };
+}
+
+/** Whether every pixel of a cell is `color`. A cell that isn't all inside the frame isn't. */
+export function cellIs(pixels, cell, size, color) {
+	const left = cell.x * size;
+	const top = cell.y * size;
+	if (left < 0 || top < 0 || left + size > FRAME_WIDTH || top + size > FRAME_HEIGHT) {
+		return false;
+	}
+	for (let y = top; y < top + size; y++) {
+		for (let x = left; x < left + size; x++) {
+			if (pixels[y * FRAME_WIDTH + x] !== color) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+/** Every cell from one cell to the other filled, so a fast drag skips none. */
+export function cellLine(pixels, from, to, size, color) {
+	walk(from, to, (x, y) => {
+		for (let row = y * size; row < (y + 1) * size; row++) {
+			span(pixels, row, x * size, (x + 1) * size - 1, color);
+		}
+	});
+}
+
+/** Calls `visit(x, y)` for every point from one point to the other, both included (Bresenham). */
+function walk(from, to, visit) {
 	let { x, y } = from;
 	const dx = Math.abs(to.x - x);
 	const dy = -Math.abs(to.y - y);
@@ -30,7 +69,7 @@ export function line(pixels, from, to, size, color) {
 	const stepY = y < to.y ? 1 : -1;
 	let error = dx + dy;
 	for (;;) {
-		stamp(pixels, x, y, size, color);
+		visit(x, y);
 		if (x === to.x && y === to.y) {
 			return;
 		}

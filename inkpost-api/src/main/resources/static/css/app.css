@@ -770,6 +770,17 @@ a {
 	image-rendering: pixelated;
 }
 
+/* The Pixel tool's grid: a line on the top and left edges of every cell (the size is set by the page), in
+ * a color that shows on black and on white. */
+.editor__grid {
+	position: absolute;
+	inset: 0;
+	background-image:
+		linear-gradient(to right, rgb(29 78 216 / 0.4) 1px, transparent 1px),
+		linear-gradient(to bottom, rgb(29 78 216 / 0.4) 1px, transparent 1px);
+	pointer-events: none;
+}
+
 /* The active photo's edges, in a color that shows on black and on white. */
 .editor__bounds {
 	position: absolute;

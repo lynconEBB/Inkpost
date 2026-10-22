@@ -3,6 +3,9 @@ import { describe, test } from "node:test";
 import {
 	BLACK,
 	blank,
+	cellIs,
+	cellLine,
+	cellOf,
 	CLEAR,
 	ellipse,
 	floodFill,
@@ -94,6 +97,61 @@ describe("a line", () => {
 		line(pixels, { x: -10, y: 3 }, { x: 4, y: 3 }, 1, BLACK);
 
 		assert.equal(count(pixels, BLACK), 5);
+	});
+});
+
+describe("the grid", () => {
+	test("puts a point in the cell it's in, counting from the frame's corner", () => {
+		assert.deepEqual(cellOf({ x: 25, y: 9 }, 10), { x: 2, y: 0 });
+		assert.deepEqual(cellOf({ x: 799, y: 479 }, 10), { x: 79, y: 47 });
+		assert.deepEqual(cellOf({ x: -1, y: 480 }, 10), { x: -1, y: 48 });
+	});
+
+	test("fills a whole cell", () => {
+		const pixels = blank();
+		cellLine(pixels, { x: 1, y: 1 }, { x: 1, y: 1 }, 2, BLACK);
+
+		assert.deepEqual(picture(pixels, 0, 0, 5, 5), [".....", ".....", "..##.", "..##.", "....."]);
+	});
+
+	test("fills every cell on the way, so a fast drag skips none", () => {
+		const pixels = blank();
+		cellLine(pixels, { x: 0, y: 0 }, { x: 3, y: 1 }, 2, BLACK);
+
+		assert.deepEqual(picture(pixels, 0, 0, 8, 4), ["####....", "####....", "....####", "....####"]);
+	});
+
+	test("fills a diagonal corner to corner", () => {
+		const pixels = blank();
+		cellLine(pixels, { x: 2, y: 2 }, { x: 0, y: 0 }, 1, WHITE);
+
+		assert.deepEqual(picture(pixels, 0, 0, 3, 3), ["o..", ".o.", "..o"]);
+	});
+
+	test("fills the cells at the frame's edges, and nothing outside", () => {
+		const pixels = blank();
+		cellLine(pixels, { x: -1, y: 0 }, { x: -1, y: 0 }, 10, BLACK);
+		assert.equal(count(pixels, BLACK), 0);
+
+		cellLine(pixels, { x: 79, y: 47 }, { x: 80, y: 47 }, 10, BLACK);
+		assert.equal(count(pixels, BLACK), 100);
+		assert.equal(pixels[WIDTH * HEIGHT - 1], BLACK);
+	});
+
+	test("knows a cell that's all one color", () => {
+		const pixels = blank();
+		cellLine(pixels, { x: 3, y: 2 }, { x: 3, y: 2 }, 8, BLACK);
+
+		assert.equal(cellIs(pixels, { x: 3, y: 2 }, 8, BLACK), true);
+		assert.equal(cellIs(pixels, { x: 3, y: 2 }, 8, WHITE), false);
+		assert.equal(cellIs(pixels, { x: 4, y: 2 }, 8, CLEAR), true);
+		stamp(pixels, 24, 16, 1, WHITE);
+		assert.equal(cellIs(pixels, { x: 3, y: 2 }, 8, BLACK), false, "one pixel differs");
+	});
+
+	test("counts a cell outside the frame as not one color", () => {
+		assert.equal(cellIs(blank(), { x: -1, y: 0 }, 8, CLEAR), false);
+		assert.equal(cellIs(blank(), { x: 100, y: 0 }, 8, CLEAR), false);
 	});
 });
 

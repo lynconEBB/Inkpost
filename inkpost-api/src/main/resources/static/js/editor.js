@@ -14,16 +14,27 @@ import {
 	removeLayer,
 	updateLayer,
 } from "./layers.js";
-import { BLACK, CLEAR, ellipse, floodFill, line, rectangle, shift, WHITE } from "./raster.js";
+import { BLACK, cellIs, cellLine, cellOf, CLEAR, ellipse, floodFill, line, rectangle, shift, WHITE } from "./raster.js";
 import { busy, clearFieldErrors, clone, showError, showFieldErrors, showFormError } from "./ui.js";
 import { cssWidth, fitZoom, framePoint, scrollToKeep, stepZoom } from "./viewport.js";
 
 const NAME_LENGTH = 100;
-const TOOL_KEYS = { v: "move", h: "hand", b: "pencil", e: "eraser", l: "line", r: "rectangle", o: "ellipse", g: "bucket" };
+const TOOL_KEYS = {
+	v: "move",
+	h: "hand",
+	b: "pencil",
+	p: "pixel",
+	e: "eraser",
+	l: "line",
+	r: "rectangle",
+	o: "ellipse",
+	g: "bucket",
+};
 const TOOL_HINTS = {
 	move: "Drag the layer, or use the arrow keys (Shift: 10 pixels).",
 	hand: "Drag to scroll the view. Space or the middle button scrolls with any tool.",
 	pencil: "Draw in the color.",
+	pixel: "Fill whole cells of the grid. Starting on a cell that's all the color clears cells instead.",
 	eraser: "Erase to see-through: the layers below show.",
 	line: "Drag from one end to the other.",
 	rectangle: "Drag from one corner to the other. The border is in the color.",
@@ -36,16 +47,20 @@ const KEY_MOVES = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], Ar
 const BIG_STEP = 10;
 /** Ctrl + wheel: how much scrolling is one zoom step. A mouse notch is about 100, a pinch sends less. */
 const WHEEL_STEP = 50;
+/** The Pixel tool's grid is hidden while its cells are smaller than this on the screen, in CSS pixels. */
+const MIN_GRID_CELL = 4;
 
 const form = document.getElementById("editor-form");
 const area = document.getElementById("area");
 const canvas = document.getElementById("canvas");
 const context = canvas.getContext("2d");
 const bounds = document.getElementById("bounds");
+const grid = document.getElementById("grid");
 const toolButtons = document.querySelectorAll("[data-tool]");
 const toolOptions = document.querySelectorAll("[data-tools]");
 const colorButton = document.getElementById("color");
 const brush = document.getElementById("brush");
+const cellSize = document.getElementById("cell");
 const border = document.getElementById("border");
 const fill = document.getElementById("fill");
 const undoButton = document.getElementById("undo");
@@ -97,6 +112,7 @@ for (const button of toolButtons) {
 	button.addEventListener("click", () => setTool(button.dataset.tool));
 }
 colorButton.addEventListener("click", switchColor);
+cellSize.addEventListener("change", showGrid);
 undoButton.addEventListener("click", undo);
 redoButton.addEventListener("click", redo);
 document.getElementById("zoom-in").addEventListener("click", () => zoomStep(1));
@@ -452,6 +468,14 @@ function setTool(name) {
 	}
 	document.getElementById("tool-hint").textContent = TOOL_HINTS[name];
 	updateCursor();
+	showGrid();
+}
+
+/** The Pixel tool's grid over the frame, while it's chosen and its cells are big enough to see. */
+function showGrid() {
+	const size = Number(cellSize.value);
+	grid.hidden = tool !== "pixel" || (canvas.offsetWidth * size) / FRAME_WIDTH < MIN_GRID_CELL;
+	grid.style.backgroundSize = `${(size / FRAME_WIDTH) * 100}% ${(size / FRAME_HEIGHT) * 100}%`;
 }
 
 function switchColor() {
@@ -624,6 +648,14 @@ function startDrawing(point) {
 		line(pixels, point, point, Number(brush.value), paint(tool));
 		started.changed = true;
 	}
+	if (tool === "pixel") {
+		// The cell the drag starts on decides whether it fills or clears.
+		const size = Number(cellSize.value);
+		const cell = cellOf(point, size);
+		Object.assign(started, { size, cell, paint: cellIs(target.pixels, cell, size, color) ? CLEAR : color });
+		cellLine(pixels, cell, cell, size, started.paint);
+		started.changed = true;
+	}
 	redraw();
 	return started;
 }
@@ -633,7 +665,11 @@ function continueDrawing(point) {
 		return;
 	}
 	const { pixels, from } = gesture;
-	if (gesture.tool === "pencil" || gesture.tool === "eraser") {
+	if (gesture.tool === "pixel") {
+		const cell = cellOf(point, gesture.size);
+		cellLine(pixels, gesture.cell, cell, gesture.size, gesture.paint);
+		gesture.cell = cell;
+	} else if (gesture.tool === "pencil" || gesture.tool === "eraser") {
 		line(pixels, gesture.last, point, Number(brush.value), paint(gesture.tool));
 	} else {
 		// The shape so far, on the layer as it was.
@@ -673,6 +709,7 @@ function applyZoom() {
 	zoomValue.textContent = `${Math.round(current * 100)}%`;
 	document.getElementById("zoom-fit").setAttribute("aria-pressed", String(zoom === null));
 	document.getElementById("zoom-actual").setAttribute("aria-pressed", String(zoom === 1));
+	showGrid();
 }
 
 /** A zoom, or Fit (null), keeping the point of the frame at (clientX, clientY) in place: by default the middle. */
