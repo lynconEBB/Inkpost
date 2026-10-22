@@ -38,7 +38,7 @@ class TimelineControllerTest {
 	@Test
 	void returnsTheTimelineWithOffsets() throws Exception {
 		when(timelineService.timeline(any(), any())).thenReturn(new TimelineResponse(42,
-				List.of(new TimelineResponse.Track(1, "Padrão", 0, true, List.of(1, 2, 3),
+				List.of(new TimelineResponse.Track(1, "Default", 0, true, List.of(1, 2, 3),
 						List.of(new TimelineResponse.Interval(START, END)))),
 				List.of(new TimelineResponse.OnAir(START, END, 1))));
 

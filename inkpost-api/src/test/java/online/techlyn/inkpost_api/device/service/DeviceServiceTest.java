@@ -67,7 +67,7 @@ class DeviceServiceTest {
 	void anEmptyDefaultRuleIsNothingToShow() {
 		assertThatThrownBy(deviceService::nextImage)
 				.isInstanceOf(NotFoundException.class)
-				.hasMessage("Rule \"Padrão\" has no frames to show");
+				.hasMessage("Rule \"Default\" has no frames to show");
 		assertThat(deviceService.status().lastRequestAt()).isNull();
 	}
 

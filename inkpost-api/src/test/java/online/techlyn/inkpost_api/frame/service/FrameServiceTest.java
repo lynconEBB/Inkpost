@@ -115,7 +115,7 @@ class FrameServiceTest {
 
 		assertThatThrownBy(() -> frameService.delete(id))
 				.isInstanceOf(ConflictException.class)
-				.hasMessage("Frame " + id + " is used by the rules \"Viagem\", \"Padrão\"; remove it from them first");
+				.hasMessage("Frame " + id + " is used by the rules \"Viagem\", \"Default\"; remove it from them first");
 		assertThat(frameService.get(id).name()).isEqualTo("Praia");
 	}
 

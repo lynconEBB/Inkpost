@@ -105,7 +105,7 @@ class DeviceControllerTest {
 
 	@Test
 	void nothingToShowIs404NeverCached() throws Exception {
-		when(deviceService.nextImage()).thenThrow(new NotFoundException("Rule \"Padrão\" has no frames to show"));
+		when(deviceService.nextImage()).thenThrow(new NotFoundException("Rule \"Default\" has no frames to show"));
 
 		mockMvc.perform(image())
 				.andExpect(status().isNotFound())
