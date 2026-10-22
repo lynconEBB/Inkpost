@@ -42,6 +42,6 @@ CREATE TABLE app_state (
 
 -- The default rule: covers every hour (all bits set), with no window and no frames yet.
 INSERT INTO rule (name, priority, is_default, hours, days_of_month, months, weekdays)
-VALUES ('Padrão', 0, 1, 16777215, 2147483647, 4095, 127);
+VALUES ('Default', 0, 1, 16777215, 2147483647, 4095, 127);
 
 INSERT INTO app_state (id) VALUES (1);

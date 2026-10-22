@@ -103,7 +103,7 @@ class RuleServiceTest {
 		assertThat(first.priority()).isEqualTo(1);
 		assertThat(second.priority()).isEqualTo(2);
 		assertThat(ruleService.list()).extracting(RuleResponse::name, RuleResponse::priority)
-				.containsExactly(tuple("Segunda", 2), tuple("Primeira", 1), tuple("Padrão", 0));
+				.containsExactly(tuple("Segunda", 2), tuple("Primeira", 1), tuple("Default", 0));
 	}
 
 	@Test
@@ -196,7 +196,7 @@ class RuleServiceTest {
 
 	@Test
 	void theDefaultRuleAcceptsEveryValueListedInFull() {
-		RuleResponse rule = ruleService.update(defaultId, request("Padrão").weekdays(1, 2, 3, 4, 5, 6, 7)
+		RuleResponse rule = ruleService.update(defaultId, request("Default").weekdays(1, 2, 3, 4, 5, 6, 7)
 				.months(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).frames(beach).build());
 
 		assertThat(rule.weekdays()).hasSize(7);
@@ -204,10 +204,10 @@ class RuleServiceTest {
 
 	@Test
 	void theDefaultRuleCoversEverything() {
-		assertInvalid(() -> ruleService.update(defaultId, request("Padrão").window(NOV_20, NOV_30).frames(beach).build()),
+		assertInvalid(() -> ruleService.update(defaultId, request("Default").window(NOV_20, NOV_30).frames(beach).build()),
 				new FieldError("startAt", "must be empty: the default rule has no window"),
 				new FieldError("endAt", "must be empty: the default rule has no window"));
-		assertInvalid(() -> ruleService.update(defaultId, request("Padrão").hours(0, 1, 2).daysOfMonth(1).months(1)
+		assertInvalid(() -> ruleService.update(defaultId, request("Default").hours(0, 1, 2).daysOfMonth(1).months(1)
 						.weekdays(1).frames(beach).build()),
 				new FieldError("hours", "must be every value: the default rule covers everything"),
 				new FieldError("daysOfMonth", "must be every value: the default rule covers everything"),

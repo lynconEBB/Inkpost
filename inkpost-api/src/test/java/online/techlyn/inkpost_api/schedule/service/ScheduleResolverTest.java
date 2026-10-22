@@ -93,7 +93,7 @@ class ScheduleResolverTest {
 
 	@Test
 	void theHighestCoveringRuleWins() {
-		Rule fallback = rule("Padrão", 0);
+		Rule fallback = rule("Default", 0);
 		Rule mornings = rule("Manhãs", 1);
 		mornings.setHours(PatternField.HOURS.toMask(List.of(6, 7, 8)));
 		Rule fridays = rule("Sextas", 2);
@@ -108,7 +108,7 @@ class ScheduleResolverTest {
 
 	@Test
 	void mergesConsecutiveHoursAndShowsTheWinnerOfEachHour() {
-		Rule fallback = rule("Padrão", 0);
+		Rule fallback = rule("Default", 0);
 		Rule mornings = rule("Manhãs", 1);
 		mornings.setHours(PatternField.HOURS.toMask(List.of(6, 7, 8)));
 
@@ -164,7 +164,7 @@ class ScheduleResolverTest {
 	void anEmptyRangeHasNothing() {
 		LocalDateTime now = LocalDateTime.of(2026, 10, 21, 0, 0);
 
-		Timeline timeline = ScheduleResolver.timeline(List.of(rule("Padrão", 0)), now, now);
+		Timeline timeline = ScheduleResolver.timeline(List.of(rule("Default", 0)), now, now);
 
 		assertThat(timeline.tracks()).isEmpty();
 		assertThat(timeline.onAir()).isEmpty();

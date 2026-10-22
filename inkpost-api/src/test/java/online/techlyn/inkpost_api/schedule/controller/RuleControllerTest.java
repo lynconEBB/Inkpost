@@ -41,7 +41,7 @@ class RuleControllerTest {
 	private static final RuleResponse TRIP = new RuleResponse(7, "Viagem", 2, false,
 			OffsetDateTime.parse("2026-11-20T00:00:00-03:00"), OffsetDateTime.parse("2026-11-30T00:00:00-03:00"),
 			List.of(12, 15), List.of(6, 7, 8), List.of(13), List.of(11), List.of(5));
-	private static final RuleResponse DEFAULT = new RuleResponse(1, "Padrão", 0, true, null, null,
+	private static final RuleResponse DEFAULT = new RuleResponse(1, "Default", 0, true, null, null,
 			List.of(), List.of(0, 1, 2), List.of(1, 2), List.of(1), List.of(1, 2, 3, 4, 5, 6, 7));
 
 	@Autowired

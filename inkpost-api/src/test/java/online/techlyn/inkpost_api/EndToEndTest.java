@@ -135,7 +135,7 @@ class EndToEndTest {
 	private void scheduleInTheDefaultRule(int defaultRuleId, int... frameIds) throws Exception {
 		String ids = String.join(", ", Arrays.stream(frameIds).mapToObj(String::valueOf).toList());
 		mockMvc.perform(put("/api/rules/" + defaultRuleId).contentType(MediaType.APPLICATION_JSON).content("""
-						{ "name": "Padrão", "frameIds": [%s] }
+						{ "name": "Default", "frameIds": [%s] }
 						""".formatted(ids)))
 				.andExpect(status().isOk());
 	}
