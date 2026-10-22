@@ -45,6 +45,17 @@
 	--shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 1px 3px rgb(0 0 0 / 0.08);
 }
 
+/* ---------- Fonts ---------- */
+
+/* The editor's one text font (D22): Noto Sans Bold, cut down to Latin (OFL, fonts/NotoSans-OFL.txt). Its own
+ * name, so the canvas never picks up a Noto Sans installed on the computer. */
+@font-face {
+	font-family: "Inkpost Text";
+	src: url("../fonts/NotoSans-Bold-latin.woff2") format("woff2");
+	font-weight: 700;
+	font-display: block;
+}
+
 /* ---------- Base ---------- */
 
 *,
@@ -754,6 +765,10 @@ a {
 	cursor: grabbing;
 }
 
+.editor__area[data-cursor="text"] {
+	cursor: text;
+}
+
 /* Auto margins center the frame while it's smaller, and unlike centering, let it scroll to every side. */
 .editor__stage {
 	position: relative;
@@ -781,11 +796,87 @@ a {
 	pointer-events: none;
 }
 
-/* The active photo's edges, in a color that shows on black and on white. */
+/* The active photo's or text's edges, in a color that shows on black and on white. */
 .editor__bounds {
 	position: absolute;
 	border: 2px dashed var(--color-accent);
 	pointer-events: none;
+}
+
+/* A text box's handles, with the Text and Move tools: small squares, with a 44 px area to grab them. */
+.handle {
+	position: absolute;
+	display: none;
+	width: 0.75rem;
+	height: 0.75rem;
+	border: 2px solid var(--color-accent);
+	background: #ffffff;
+	transform: translate(-50%, -50%);
+	pointer-events: auto;
+	touch-action: none;
+}
+
+.handle::before {
+	position: absolute;
+	inset: calc((0.75rem - var(--tap)) / 2);
+	content: "";
+}
+
+.editor__bounds--handles .handle {
+	display: block;
+}
+
+.handle[data-handle="nw"] {
+	top: 0;
+	left: 0;
+	cursor: nwse-resize;
+}
+
+.handle[data-handle="n"] {
+	top: 0;
+	left: 50%;
+	cursor: ns-resize;
+}
+
+.handle[data-handle="ne"] {
+	top: 0;
+	left: 100%;
+	cursor: nesw-resize;
+}
+
+.handle[data-handle="e"] {
+	top: 50%;
+	left: 100%;
+	cursor: ew-resize;
+}
+
+.handle[data-handle="se"] {
+	top: 100%;
+	left: 100%;
+	cursor: nwse-resize;
+}
+
+.handle[data-handle="s"] {
+	top: 100%;
+	left: 50%;
+	cursor: ns-resize;
+}
+
+.handle[data-handle="sw"] {
+	top: 100%;
+	left: 0;
+	cursor: nesw-resize;
+}
+
+.handle[data-handle="w"] {
+	top: 50%;
+	left: 0;
+	cursor: ew-resize;
+}
+
+.textarea {
+	min-height: 6rem;
+	resize: vertical;
 }
 
 .editor__zoom {

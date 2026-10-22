@@ -1,9 +1,11 @@
 // The editor's layers (D47), with no DOM. The list runs from the bottom up, on a white background. A drawing
 // layer is pixels (raster.js); a photo layer is a photo with its place, size and adjustments, which the
-// page crops and dithers. Lists and layers are never changed in place, so the undo history keeps them (D49).
+// page crops and dithers; a text layer is a text in a box (D50), which the page draws in the font. Lists
+// and layers are never changed in place, so the undo history keeps them (D49).
 import { FRAME_HEIGHT, FRAME_WIDTH } from "./crop.js";
 import { DEFAULT_SETTINGS } from "./dither.js";
 import { BLACK, blank, WHITE } from "./raster.js";
+import { inBox } from "./text.js";
 
 const WHITE_VALUE = 255;
 
@@ -24,6 +26,16 @@ export function photoLayer(id, name, source) {
 		centerY: FRAME_HEIGHT / 2,
 		...DEFAULT_SETTINGS,
 	};
+}
+
+/** An empty text in a box, `{ left, top, width, height }`, with its size (TEXT_SIZES), alignment and color. */
+export function textLayer(id, name, box, { size, align, color }) {
+	return { id, kind: "text", name, visible: true, text: "", size, align, color, ...box };
+}
+
+/** The top visible text layer whose box has the point, or null. */
+export function textLayerAt(layers, point) {
+	return layers.findLast((layer) => layer.kind === "text" && layer.visible && inBox(layer, point)) ?? null;
 }
 
 export function findLayer(layers, id) {
@@ -60,9 +72,11 @@ export function updateLayer(layers, id, changes) {
 /**
  * The frame as gray values from 0 (black) to 255 (white): white, then every visible layer from the bottom
  * up. A drawing's clear pixels let what's below show through. A photo covers the part of the frame it's on
- * with `photoPart(layer)`: `{ left, top, width, height, values }`, its gray values there, or null.
+ * with `photo(layer)`: `{ left, top, width, height, values }`, its gray values there, or null. A text paints
+ * its color where `text(layer)`, a mask of its box (1 for the text, 0 around it), is 1; its box can go past
+ * the frame's edges.
  */
-export function composite(layers, photoPart) {
+export function composite(layers, { photo, text }) {
 	const frame = new Uint8ClampedArray(FRAME_WIDTH * FRAME_HEIGHT).fill(WHITE_VALUE);
 	for (const layer of layers) {
 		if (!layer.visible) {
@@ -79,7 +93,11 @@ export function composite(layers, photoPart) {
 			}
 			continue;
 		}
-		const part = photoPart(layer);
+		if (layer.kind === "text") {
+			paintMask(frame, layer, text(layer), layer.color === BLACK ? 0 : WHITE_VALUE);
+			continue;
+		}
+		const part = photo(layer);
 		if (!part) {
 			continue;
 		}
@@ -89,4 +107,18 @@ export function composite(layers, photoPart) {
 		}
 	}
 	return frame;
+}
+
+/** `value` where the mask of the box is 1, inside the frame. */
+function paintMask(frame, box, mask, value) {
+	const left = Math.max(0, box.left);
+	const right = Math.min(FRAME_WIDTH, box.left + box.width);
+	for (let y = Math.max(0, box.top); y < Math.min(FRAME_HEIGHT, box.top + box.height); y++) {
+		const row = (y - box.top) * box.width - box.left;
+		for (let x = left; x < right; x++) {
+			if (mask[row + x] === 1) {
+				frame[y * FRAME_WIDTH + x] = value;
+			}
+		}
+	}
 }

@@ -219,8 +219,9 @@ editing a frame automatically triggers a refresh. Tolerate a `W/` (weak) prefix 
 may add.
 
 ### D18. Pixel-only editor (Paint-style), no editable objects
-Everything drawn (pixels, shapes, fills, text) is rasterized immediately, into its layer (D47). No
-object model, selection, or re-editable text. Only photos stay adjustable until the frame is saved (D47).
+Everything drawn (pixels, shapes, fills) is rasterized immediately, into its layer (D47). No object
+model or selection. Only photos (D47) and texts (D50) stay adjustable until the frame is saved, each as a
+layer of its own.
 **Why:** Canva-style editable objects are several times the work.
 
 ### D19. The browser is the only renderer
@@ -239,8 +240,17 @@ imperative canvas drawing.
 One bitmap couldn't make collages or draw over a photo and still move or adjust the photo.
 
 ### D22. One font, three sizes
-Text uses a single font family with only three predefined sizes. Exact font and sizes to be
-chosen by prototyping what looks best in 1-bit.
+Text uses a single font, Noto Sans Bold, in three sizes: small 24 px, medium 40 px, large 64 px.
+- Chosen by rendering candidates in 1 bit (alpha thresholded at 50 %), from 16 to 64 px, with Portuguese
+  text and every accent: Noto Sans Bold, Inter Bold and Atkinson Hyperlegible Bold were clean at every
+  size; the pixel fonts weren't (Pixelify Sans thin and uneven under 32 px, Press Start 2P too wide and
+  wrong on accented capitals). Bold, because thin strokes break up at 1 bit.
+- 24 px is about 5 mm on the 7.5" panel, the smallest that reads from a step away.
+- The file is cut down to Latin (ASCII, Latin-1, dashes, quotes, ellipsis, euro): 15 KB of woff2, in
+  `static/fonts/` with its license (OFL 1.1, no reserved font name, so it may be cut down). It's loaded as
+  "Inkpost Text", so the canvas never uses a Noto Sans installed on the computer instead.
+- Lines are 1.3 × the size apart, with the baseline 1 × the size below a line's top: accented capitals
+  reach 0.95 × the size above it and descenders 0.25 × below, so nothing is cut.
 
 ### D23. Replaced by D38 (was: schedule as a timeline of "from this date-time, show this frame")
 A timeline of single (start date-time, frame) entries can't express repeating or rotating content.
@@ -504,7 +514,7 @@ don't change.
 
 ### D47. Layers while editing, flattened on save
 The editor (`/frames/new`) works on a list of layers over a white background (the background isn't a
-layer). They only live in the page: Save flattens them into the PNG of D41, so the API and the stored
+layer). There are three kinds: drawing, photo and text (D50). They only live in the page: Save flattens them into the PNG of D41, so the API and the stored
 frame don't change, and a saved frame can't be edited again.
 - **Drawing layer:** a frame-sized array, one value per pixel: clear (see-through), black or white.
   Strokes and shapes become pixels at once (D18).
@@ -513,7 +523,7 @@ frame don't change, and a saved frame can't be edited again.
   pixels.
 - **Composite:** white, then every visible layer from the bottom up. A drawing's black and white
   pixels cover what's below and its clear pixels let it through; a photo covers the part of the frame
-  it's on. Hidden layers are left out of the saved frame.
+  it's on; a text paints its color where its letters are. Hidden layers are left out of the saved frame.
 - **Each photo is dithered by itself,** only its part inside the frame, so drawings stay crisp over
   photos. The page keeps each photo's crop and dithered pixels until its place, size or adjustments
   change.
@@ -531,8 +541,8 @@ photos stay adjustable, which is where re-doing work hurts; shapes stay pixels (
 - **Scrolling the view by dragging:** the Hand tool, or holding Space, or the middle button, with any
   tool. (On the old upload page dragging always moved the photo, so a zoomed view could only scroll
   sideways with the scrollbar.)
-- **Tools:** Move (V), Hand (H), Pencil (B), Pixel (P), Eraser (E), Line (L), Rectangle (R), Ellipse (O)
-  and Fill (G). The color is black or white (X switches). Pencil, eraser and line take a square brush of 1, 2,
+- **Tools:** Move (V), Hand (H), Pencil (B), Pixel (P), Eraser (E), Line (L), Rectangle (R), Ellipse (O),
+  Fill (G) and Text (T, D50). The color is black or white (X switches). Pencil, eraser and line take a square brush of 1, 2,
   4 or 8 px; rectangles and ellipses take a border of 0–16 px in the color and a fill (none, black,
   white). Shapes show while dragged and become pixels when let go. No Shift-constrained shapes.
 - Moving a drawing layer moves its pixels when let go: what goes past the frame's edge is lost (undo
@@ -563,6 +573,28 @@ layer is 384 KB). At most 50 steps back.
 
 **Why:** with immutable layers, undo is just keeping the previous list, with no inverse operations.
 
+### D50. Text: a box the words wrap in, like Photoshop's paragraph text
+A text is a layer: its text, a box (`left`, `top`, `width`, `height`), a size (D22), an alignment (left,
+center, right) and a color (black or white). It stays editable until Save, like a photo (D47).
+- **Making one:** the Text tool, dragging a box. A click makes a box 320 px wide and two lines high,
+  kept inside the frame when it fits. The new text takes the color and the last size and alignment
+  chosen. Clicking an existing text with the Text tool picks it instead.
+- **Typing:** in a text field in the layer's settings, with the frame showing it at once. Not on the
+  canvas itself: a field works the same on a phone, with its keyboard, and needs no caret of our own.
+  The text is one undo step when the field is left (D49).
+- **Wrapping** (`text.js`): words wrap at spaces, the space at a break is dropped, a word wider than the
+  box is cut where it must, and a new line in the text is a new line. Lines that don't fit in the box's
+  height are left out whole, and the settings say "Some of the text doesn't fit".
+- **The box:** 8 handles, with the Text and Move tools, move its edges, at least 16 px apart; the Move
+  tool and the arrow keys move it. It can go past the frame's edges, which cut the text.
+- **Drawing:** the text is drawn in the font on a canvas the size of its box and read back as a mask,
+  1 where it's at least half opaque, kept until the text, size, alignment or box size changes. The
+  layer paints its color where the mask is 1 and leaves the rest see-through.
+- Drawing tools on a text layer draw on a new drawing layer above it, as on a photo.
+
+**Why:** the box and the wrapping are what make a message easy to lay out; one font in three sizes
+(D22) keeps it looking right in 1 bit.
+
 ## Guiding principle
 
 Prefer doing a few things well over supporting many features or edge cases. When in doubt,
@@ -570,5 +602,4 @@ pick the option with fewer cases to handle.
 
 ## Open questions
 
-- Which font and which 3 sizes (prototype).
 - Backups of the SQLite file (D40).

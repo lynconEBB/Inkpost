@@ -45,6 +45,10 @@
 					aria-label="Fill" aria-keyshortcuts="G" title="Fill (G)">
 					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l7-7 7 7-7 7zM4 11h14M20 15s1.5 2.2 1.5 3.3a1.5 1.5 0 0 1-3 0c0-1.1 1.5-3.3 1.5-3.3z"/></svg>
 				</button>
+				<button type="button" class="button button--icon tool" data-tool="text" aria-pressed="false"
+					aria-label="Text" aria-keyshortcuts="T" title="Text (T)">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6V4h14v2M12 4v16M9 20h6"/></svg>
+				</button>
 			</div>
 			<div class="tool-group">
 				<button type="button" class="button button--icon tool color-button" id="color" data-color="black"
@@ -119,7 +123,17 @@
 					<canvas class="editor__canvas" id="canvas" width="800" height="480" tabindex="0"
 						aria-label="The frame. Draw with the tools, or with the Move tool, use the arrow keys to move the layer."></canvas>
 					<div class="editor__grid" id="grid" hidden></div>
-					<div class="editor__bounds" id="bounds" hidden></div>
+					<!-- The active photo's or text's box; a text box is resized by its handles (D50). -->
+					<div class="editor__bounds" id="bounds" hidden>
+						<span class="handle" data-handle="nw"></span>
+						<span class="handle" data-handle="n"></span>
+						<span class="handle" data-handle="ne"></span>
+						<span class="handle" data-handle="e"></span>
+						<span class="handle" data-handle="se"></span>
+						<span class="handle" data-handle="s"></span>
+						<span class="handle" data-handle="sw"></span>
+						<span class="handle" data-handle="w"></span>
+					</div>
 				</div>
 			</div>
 
@@ -194,6 +208,37 @@
 					</div>
 					<div>
 						<button type="button" class="button" id="reset">Reset adjustments</button>
+					</div>
+				</fieldset>
+				<fieldset class="fieldset" id="text-settings" hidden>
+					<legend class="visually-hidden">Text</legend>
+					<div class="field">
+						<label for="text">Text</label>
+						<textarea class="input textarea" id="text" rows="4" autocomplete="off"></textarea>
+						<p class="hint" id="text-overflow" hidden>Some of the text doesn't fit: make the box bigger, or the text smaller.</p>
+					</div>
+					<div class="field">
+						<label for="text-size">Size</label>
+						<select class="select" id="text-size">
+							<option value="small">Small</option>
+							<option value="medium" selected>Medium</option>
+							<option value="large">Large</option>
+						</select>
+					</div>
+					<div class="field">
+						<label for="text-align">Alignment</label>
+						<select class="select" id="text-align">
+							<option value="left" selected>Left</option>
+							<option value="center">Center</option>
+							<option value="right">Right</option>
+						</select>
+					</div>
+					<div class="field">
+						<label for="text-color">Color</label>
+						<select class="select" id="text-color">
+							<option value="black" selected>Black</option>
+							<option value="white">White</option>
+						</select>
 					</div>
 				</fieldset>
 			</section>
