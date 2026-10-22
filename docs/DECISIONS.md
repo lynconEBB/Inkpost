@@ -67,7 +67,7 @@ If-None-Match: "<last-id>"        (omitted if no ID stored)
 
 - The ID travels in a header, so the body is exactly the 48000-byte image (keeps D5's check simple).
 - The new ID is stored only **after** the image is drawn successfully, so a failed draw is retried
-  next cycle.
+  next cycle. A failed draw also clears the stored ID (D46).
 - The key is sent in the `Authorization` header (never in the URL, which ends up in logs).
 
 **Why:** avoids downloading 48 KB and a ~4 s full-panel flash when nothing changed.
@@ -94,9 +94,10 @@ Firmware is only updated by flashing over USB.
 Revisit if this becomes a product (note: adding OTA later requires one USB flash first).
 
 ### D28. Firmware modules: one header + one `.c` in `main/`, blocking API, no callbacks
-Each abstraction (`ink_wifi`, `ink_http`, …) is a header we call and a `.c` that implements it,
-all in `main/`. No ESP-IDF components: the separation is ours to keep (only use a module through
-its header). Every call blocks until done; the ESP-IDF event machinery stays inside the `.c`.
+Each abstraction (`ink_wifi`, `ink_http`, `ink_display`, `ink_time`, `ink_api`) is a header we
+call and a `.c` that implements it, all in `main/`. No ESP-IDF components: the separation is ours
+to keep (only use a module through its header). Every call blocks until done; the ESP-IDF event
+machinery stays inside the `.c`.
 The `ink_` prefix avoids clashes with ESP-IDF names (`wifi_*`, `HTTP_GET`).
 **Why:** the code is only used by this project; blocking calls make the cycle (D1) read top to bottom.
 
@@ -111,8 +112,9 @@ The `ink_` prefix avoids clashes with ESP-IDF names (`wifi_*`, `HTTP_GET`).
   Cloudflare sends more, so the ETag (D9) could be lost.
 
 ### D30. Secrets live in a gitignored `main/secrets.h`
-Refines D7: Wi-Fi credentials (and later the API key, D8) are still compiled in, but from
-`main/secrets.h`, which is not committed. `main/secrets.h.example` is the template to copy.
+Refines D7: Wi-Fi credentials, the image URL and the device key (`DEVICE_KEY`, D8) are still
+compiled in, but from `main/secrets.h`, which is not committed. `main/secrets.h.example` is the
+template to copy.
 
 ### D31. Tests are on-device integration tests
 `inkpost-firmware/test/` is a separate ESP-IDF project that compiles the modules from `main/` and
@@ -146,6 +148,7 @@ Waveshare recommends refreshing the panel at least once every 24 hours, and refr
 180 s apart. With D9 alone, an unchanged image would never be redrawn. So the wake at the 00:00
 mark (00:01, D25) sends no `If-None-Match`, the server returns the image, and the panel is
 redrawn. If NTP failed on that wake (D24), the time is unknown and it is a normal wake.
+How the firmware recognizes that wake is in D46.
 The 3-hour cycle (D3) already keeps refreshes far more than 180 s apart.
 **Why:** keeps the panel healthy, and at night nobody sees the ~4 s flash.
 
@@ -165,8 +168,28 @@ for fleets of devices, and for one frame it only delays every wake.
 and deep sleep. `main.c` runs the cycle (D1): up to 3 attempts (D2) of Wi-Fi, NTP, fetch and draw,
 then Wi-Fi off and deep sleep until the next wake (D3). Deep sleep never returns: every wake
 starts `app_main` from the top, so there is no loop in the code (D11).
-For now `IMAGE_URL` (in `secrets.h`) points at the API's test image, with no ETag (D9), so every
-wake redraws. That also covers D35.
+Each fetch sends the device key and, unless it is the daily redraw (D35), `If-None-Match` (D46).
+
+### D46. `ink_api`: the firmware's side of the device endpoint
+`ink_api_get_image` is the device endpoint's protocol (`GET /api/image`, D9): it sends the key in
+`Authorization` and, when given an ETag, `If-None-Match`, and only returns `ESP_OK` for a `304` or a
+`200` of exactly 48000 bytes (D5). Any other status is `ESP_ERR_INVALID_RESPONSE`. It is stateless:
+`main.c` keeps the ETag of the image on the panel in RTC memory (D10).
+- `401` (wrong key) and `404` (nothing scheduled, D27) are failures like any other, retried as in D2
+  with no special rules (guiding principle). Each retry still advances the rotation (D38).
+- The ETag is stored and sent back verbatim, quotes and any `W/` prefix included (D17). One longer
+  than 79 characters is treated as absent: the next request is unconditional, which costs at most
+  one redraw.
+- A failed draw clears the stored ETag (refines D9, which assumed one image, not a rotation). After
+  a failed refresh the panel's content is unknown, so the next request must get a `200`, not a `304`
+  for the frame that was there before. Any other failure leaves the ETag alone: the panel wasn't
+  touched.
+- The daily redraw wake (D35) is the one whose nearest 3-hour mark is 00:00, i.e. local time
+  22:30–01:30, so a slightly early wake (23:59:50, D3) counts too. `main.c` rounds now − 90 min up to
+  a 3-hour mark and checks for hour 0.
+
+**Why:** `main.c` stays just the cycle (D37), and the status and ETag handling is tested on the
+board (D31).
 
 ## API / web app
 
