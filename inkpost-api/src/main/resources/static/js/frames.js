@@ -36,7 +36,7 @@ async function load() {
 function render() {
 	const empty = frames.length === 0;
 	document.getElementById("empty").hidden = !empty;
-	document.getElementById("upload-link").hidden = empty;
+	document.getElementById("new-link").hidden = empty;
 	grid.replaceChildren(...frames.map(card));
 }
 

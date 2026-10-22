@@ -219,8 +219,9 @@ editing a frame automatically triggers a refresh. Tolerate a `W/` (weak) prefix 
 may add.
 
 ### D18. Pixel-only editor (Paint-style), no editable objects
-Everything drawn (pixels, shapes, fills, text) is rasterized into the 800×480 1-bit bitmap
-immediately. No object model, selection, or re-editable text.
+Everything drawn (pixels, shapes, fills) is rasterized immediately, into its layer (D47). No object
+model or selection. Only photos (D47) and texts (D50) stay adjustable until the frame is saved, each as a
+layer of its own.
 **Why:** Canva-style editable objects are several times the work.
 
 ### D19. The browser is the only renderer
@@ -235,13 +236,21 @@ All pages are server-rendered Thymeleaf. The editor page loads a plain JS module
 **Why:** one app, one deploy, Cloudflare Access covers everything; a framework doesn't help with
 imperative canvas drawing.
 
-### D21. Single bitmap, no layers
-The editor works on one 800×480 1-bit bitmap with undo. Consequence: an imported photo is
-dithered once (with the slider settings) and becomes plain pixels; to re-dither, re-import.
+### D21. Replaced by D47 (was: single bitmap, no layers)
+One bitmap couldn't make collages or draw over a photo and still move or adjust the photo.
 
 ### D22. One font, three sizes
-Text uses a single font family with only three predefined sizes. Exact font and sizes to be
-chosen by prototyping what looks best in 1-bit.
+Text uses a single font, Noto Sans Bold, in three sizes: small 24 px, medium 40 px, large 64 px.
+- Chosen by rendering candidates in 1 bit (alpha thresholded at 50 %), from 16 to 64 px, with Portuguese
+  text and every accent: Noto Sans Bold, Inter Bold and Atkinson Hyperlegible Bold were clean at every
+  size; the pixel fonts weren't (Pixelify Sans thin and uneven under 32 px, Press Start 2P too wide and
+  wrong on accented capitals). Bold, because thin strokes break up at 1 bit.
+- 24 px is about 5 mm on the 7.5" panel, the smallest that reads from a step away.
+- The file is cut down to Latin (ASCII, Latin-1, dashes, quotes, ellipsis, euro): 15 KB of woff2, in
+  `static/fonts/` with its license (OFL 1.1, no reserved font name, so it may be cut down). It's loaded as
+  "Inkpost Text", so the canvas never uses a Noto Sans installed on the computer instead.
+- Lines are 1.3 × the size apart, with the baseline 1 × the size below a line's top: accented capitals
+  reach 0.95 × the size above it and descenders 0.25 × below, so nothing is cut.
 
 ### D23. Replaced by D38 (was: schedule as a timeline of "from this date-time, show this frame")
 A timeline of single (start date-time, frame) entries can't express repeating or rotating content.
@@ -473,16 +482,16 @@ browser is the only renderer (D19).
 - **Decode:** `createImageBitmap` with the EXIF orientation applied, so phone photos stay upright. A
   file the browser can't decode (e.g. HEIC on a desktop) gets "Can't read this image, use a JPEG or
   PNG".
-- **Crop to fill:** the photo is scaled to cover 800×480 and centered. Dragging (Pointer Events, mouse
-  and touch) moves it, clamped so the frame is always covered, so only one axis moves. No zoom or
-  rotation.
+- **Place:** a photo is a layer (D47). It starts scaled to cover 800×480 and centered, then moves
+  freely and is resized (D48). No rotation. (It used to be clamped so the frame stayed covered, so only
+  one axis moved.)
 - **Adjust:** brightness and contrast (−100 … 100), and the dithering: Floyd–Steinberg (the default,
   serpentine), Atkinson, or a 50% threshold. The preview is the dithered result; while dragging it
-  shows the grayscale crop and dithers on release.
+  shows the grayscale crop and dithers on release. The same goes for resizing.
 - **Upload:** every pixel exactly 0 or 255 with alpha 255, then `canvas.toBlob(…, "image/png")`, sent
   with the name (by default the file name) to `POST /api/frames`.
-- `dither.js` works on plain arrays and knows nothing about the DOM, so the editor's photo import
-  reuses it (D21).
+- `dither.js` works on plain arrays and knows nothing about the DOM. Each photo is dithered by itself,
+  only the part inside the frame (D47).
 
 **Why:** what the preview shows is exactly what the frame shows. Dithering an 800×480 crop takes a few
 milliseconds, so the sliders can re-dither on every animation frame.
@@ -503,6 +512,89 @@ and sends `endAt` = that block + 3 h. On load it shows `endAt − 3 h`.
 off by one in every rule. The stored end stays exclusive, so the rule semantics (D38) and the API (D41)
 don't change.
 
+### D47. Layers while editing, flattened on save
+The editor (`/frames/new`) works on a list of layers over a white background (the background isn't a
+layer). There are three kinds: drawing, photo and text (D50). They only live in the page: Save flattens them into the PNG of D41, so the API and the stored
+frame don't change, and a saved frame can't be edited again.
+- **Drawing layer:** a frame-sized array, one value per pixel: clear (see-through), black or white.
+  Strokes and shapes become pixels at once (D18).
+- **Photo layer:** the decoded photo with a center, a scale (1 = covers the frame) and its brightness,
+  contrast and dithering (D44), all adjustable until Save. A photo is an opaque rectangle in whole
+  pixels.
+- **Composite:** white, then every visible layer from the bottom up. A drawing's black and white
+  pixels cover what's below and its clear pixels let it through; a photo covers the part of the frame
+  it's on; a text paints its color where its letters are. Hidden layers are left out of the saved frame.
+- **Each photo is dithered by itself,** only its part inside the frame, so drawings stay crisp over
+  photos. The page keeps each photo's crop and dithered pixels until its place, size or adjustments
+  change.
+- A new editor has one empty drawing layer. Leaving the page with changes asks first
+  (`beforeunload`): the layers are kept nowhere else.
+
+**Why:** collages and drawing over photos, with no change to the API or the format (D41). Only the
+photos stay adjustable, which is where re-doing work hurts; shapes stay pixels (D18).
+
+### D48. Editor: view, tools and layout
+- **View:** the 800×480 canvas is scaled by CSS (`image-rendering: pixelated`) inside an area that
+  scrolls in both directions. Zooms: Fit, and 1×, 2×, 4×, 8×, 16× screen pixels per frame pixel (1× is
+  the old "Actual pixels"). A step skips a zoom within 25 % of the current one. Ctrl/⌘ + wheel zooms
+  where the pointer is.
+- **Scrolling the view by dragging:** the Hand tool, or holding Space, or the middle button, with any
+  tool. (On the old upload page dragging always moved the photo, so a zoomed view could only scroll
+  sideways with the scrollbar.)
+- **Tools:** Move (V), Hand (H), Pencil (B), Pixel (P), Eraser (E), Line (L), Rectangle (R), Ellipse (O),
+  Fill (G) and Text (T, D50). The color is black or white (X switches). Pencil, eraser and line take a square brush of 1, 2,
+  4 or 8 px; rectangles and ellipses take a border of 0–16 px in the color and a fill (none, black,
+  white). Shapes show while dragged and become pixels when let go. No Shift-constrained shapes.
+- Moving a drawing layer moves its pixels when let go: what goes past the frame's edge is lost (undo
+  brings it back). Moving a photo only changes its center. Arrow keys move 1 px, Shift + arrow 10 px.
+- **Fill** only looks at the active layer's pixels, through the 4 neighbours (never diagonally).
+- **Pixel** is a pencil for pixel art: it fills whole cells of a grid of squares from the frame's top-left
+  corner, 4 to 40 px, only sizes that divide 800 and 480 so every cell is whole (10 px by default, 80 × 48
+  cells). A drag fills every cell it crosses, always in the color: switch to white to paint cells
+  white. The grid shows over the frame while Pixel is chosen, unless the cells are under 4 CSS px on the screen.
+- **Drawing on a photo, or with no layer,** draws on a new drawing layer above it.
+- **Layout:** on phones everything is stacked: tools, frame, zoom, layers, layer settings, frame name,
+  then the sticky Save bar. From 64rem: tools on the left, the frame in the middle at the window's
+  height, layers and settings on the right. The editor page uses the whole window width, not 72rem
+  (D43).
+
+**Why:** a simple Photoshop: the tools a pixel-art frame and a collage need, and nothing that needs an
+object model (D18).
+
+### D49. Undo = snapshots of immutable layer lists
+Each step is the whole layer list. Layers are never changed in place: a stroke draws on a copy of
+its layer's pixels, which replaces the layer when let go, so a step only costs what changed (a drawing
+layer is 384 KB). At most 50 steps back.
+- Steps: a stroke, shape or fill, a move, adding, deleting or reordering a layer, showing or hiding
+  one, a rename, and each photo adjustment. A slider is one step when let go, not one per value.
+- Not steps: the active layer, the tool, the color and the zoom. If an undo removes the active layer,
+  the top one becomes active.
+- Ctrl+Z, Ctrl+Shift+Z / Ctrl+Y, and toolbar buttons for phones. Shortcuts are ignored while typing.
+
+**Why:** with immutable layers, undo is just keeping the previous list, with no inverse operations.
+
+### D50. Text: a box the words wrap in, like Photoshop's paragraph text
+A text is a layer: its text, a box (`left`, `top`, `width`, `height`), a size (D22), an alignment (left,
+center, right) and a color (black or white). It stays editable until Save, like a photo (D47).
+- **Making one:** the Text tool, dragging a box. A click makes a box 320 px wide and two lines high,
+  kept inside the frame when it fits. The new text takes the color and the last size and alignment
+  chosen. Clicking an existing text with the Text tool picks it instead.
+- **Typing:** in a text field in the layer's settings, with the frame showing it at once. Not on the
+  canvas itself: a field works the same on a phone, with its keyboard, and needs no caret of our own.
+  The text is one undo step when the field is left (D49).
+- **Wrapping** (`text.js`): words wrap at spaces, the space at a break is dropped, a word wider than the
+  box is cut where it must, and a new line in the text is a new line. Lines that don't fit in the box's
+  height are left out whole, and the settings say "Some of the text doesn't fit".
+- **The box:** 8 handles, with the Text and Move tools, move its edges, at least 16 px apart; the Move
+  tool and the arrow keys move it. It can go past the frame's edges, which cut the text.
+- **Drawing:** the text is drawn in the font on a canvas the size of its box and read back as a mask,
+  1 where it's at least half opaque, kept until the text, size, alignment or box size changes. The
+  layer paints its color where the mask is 1 and leaves the rest see-through.
+- Drawing tools on a text layer draw on a new drawing layer above it, as on a photo.
+
+**Why:** the box and the wrapping are what make a message easy to lay out; one font in three sizes
+(D22) keeps it looking right in 1 bit.
+
 ## Guiding principle
 
 Prefer doing a few things well over supporting many features or edge cases. When in doubt,
@@ -510,5 +602,4 @@ pick the option with fewer cases to handle.
 
 ## Open questions
 
-- Which font and which 3 sizes (prototype).
 - Backups of the SQLite file (D40).

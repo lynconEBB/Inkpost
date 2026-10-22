@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('New frame')}"></head>
+<body>
+<th:block th:replace="~{layout :: header('frames')}"></th:block>
+<main class="page page--editor">
+	<h1 class="visually-hidden">New frame</h1>
+	<!-- The layers only live in this page (D47): Save flattens them into the frame's image. -->
+	<form class="editor" id="editor-form" novalidate>
+		<div class="editor__tools" role="toolbar" aria-label="Tools">
+			<div class="tool-group">
+				<button type="button" class="button button--icon tool" data-tool="move" aria-pressed="false"
+					aria-label="Move" aria-keyshortcuts="V" title="Move (V)">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/></svg>
+				</button>
+				<button type="button" class="button button--icon tool" data-tool="hand" aria-pressed="false"
+					aria-label="Hand: scroll the view" aria-keyshortcuts="H" title="Hand (H, or hold Space)">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 13V6a1.5 1.5 0 0 1 3 0v5M11 11V4.5a1.5 1.5 0 0 1 3 0V11M14 11V6a1.5 1.5 0 0 1 3 0v8a7 7 0 0 1-7 7 6 6 0 0 1-5-2.7l-2.4-3.8a1.5 1.5 0 0 1 2.5-1.7L8 15"/></svg>
+				</button>
+				<button type="button" class="button button--icon tool" data-tool="pencil" aria-pressed="false"
+					aria-label="Pencil" aria-keyshortcuts="B" title="Pencil (B)">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1-5L15.5 4.5a2.1 2.1 0 0 1 3 3L8 19zM13.5 6.5l3 3"/></svg>
+				</button>
+				<button type="button" class="button button--icon tool" data-tool="pixel" aria-pressed="false"
+					aria-label="Pixel: fill cells of a grid" aria-keyshortcuts="P" title="Pixel (P)">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="8" height="8" fill="currentColor"/><path d="M4 4h16v16H4zM12 4v16M4 12h16"/></svg>
+				</button>
+				<button type="button" class="button button--icon tool" data-tool="eraser" aria-pressed="false"
+					aria-label="Eraser" aria-keyshortcuts="E" title="Eraser (E)">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4l5 5-10 10H6l-3-3zM9 10l5 5M10 20h10"/></svg>
+				</button>
+				<button type="button" class="button button--icon tool" data-tool="line" aria-pressed="false"
+					aria-label="Line" aria-keyshortcuts="L" title="Line (L)">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19L19 5"/></svg>
+				</button>
+				<button type="button" class="button button--icon tool" data-tool="rectangle" aria-pressed="false"
+					aria-label="Rectangle" aria-keyshortcuts="R" title="Rectangle (R)">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="16" height="12"/></svg>
+				</button>
+				<button type="button" class="button button--icon tool" data-tool="ellipse" aria-pressed="false"
+					aria-label="Ellipse" aria-keyshortcuts="O" title="Ellipse (O)">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="12" rx="9" ry="7"/></svg>
+				</button>
+				<button type="button" class="button button--icon tool" data-tool="bucket" aria-pressed="false"
+					aria-label="Fill" aria-keyshortcuts="G" title="Fill (G)">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l7-7 7 7-7 7zM4 11h14M20 15s1.5 2.2 1.5 3.3a1.5 1.5 0 0 1-3 0c0-1.1 1.5-3.3 1.5-3.3z"/></svg>
+				</button>
+				<button type="button" class="button button--icon tool" data-tool="text" aria-pressed="false"
+					aria-label="Text" aria-keyshortcuts="T" title="Text (T)">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6V4h14v2M12 4v16M9 20h6"/></svg>
+				</button>
+			</div>
+			<div class="tool-group">
+				<button type="button" class="button button--icon tool color-button" id="color" data-color="black"
+					aria-label="Color: black. Switch to white" aria-keyshortcuts="X" title="Color (X switches)">
+					<span class="color-button__swatch" aria-hidden="true"></span>
+				</button>
+			</div>
+			<div class="tool-group">
+				<button type="button" class="button button--icon tool" id="undo" disabled
+					aria-label="Undo" aria-keyshortcuts="Control+Z" title="Undo (Ctrl+Z)">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3"/></svg>
+				</button>
+				<button type="button" class="button button--icon tool" id="redo" disabled
+					aria-label="Redo" aria-keyshortcuts="Control+Shift+Z" title="Redo (Ctrl+Shift+Z)">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 14l5-5-5-5M20 9H10a6 6 0 0 0 0 12h3"/></svg>
+				</button>
+			</div>
+		</div>
+
+		<div class="editor__main">
+			<div class="editor__options" role="group" aria-label="Tool options">
+				<div class="option" data-tools="pencil eraser line">
+					<label for="brush">Size</label>
+					<select class="select" id="brush">
+						<option value="1" selected>1 px</option>
+						<option value="2">2 px</option>
+						<option value="4">4 px</option>
+						<option value="8">8 px</option>
+					</select>
+				</div>
+				<div class="option" data-tools="pixel">
+					<label for="cell">Cell</label>
+					<!-- Sizes that divide 800 and 480, so every cell is whole: the grid in cells. -->
+					<select class="select" id="cell">
+						<option value="4">4 px, 200 × 120</option>
+						<option value="5">5 px, 160 × 96</option>
+						<option value="8">8 px, 100 × 60</option>
+						<option value="10" selected>10 px, 80 × 48</option>
+						<option value="16">16 px, 50 × 30</option>
+						<option value="20">20 px, 40 × 24</option>
+						<option value="32">32 px, 25 × 15</option>
+						<option value="40">40 px, 20 × 12</option>
+					</select>
+				</div>
+				<div class="option" data-tools="rectangle ellipse">
+					<label for="border">Border</label>
+					<select class="select" id="border">
+						<option value="0">None</option>
+						<option value="1" selected>1 px</option>
+						<option value="2">2 px</option>
+						<option value="3">3 px</option>
+						<option value="4">4 px</option>
+						<option value="6">6 px</option>
+						<option value="8">8 px</option>
+						<option value="12">12 px</option>
+						<option value="16">16 px</option>
+					</select>
+				</div>
+				<div class="option" data-tools="rectangle ellipse">
+					<label for="fill">Fill</label>
+					<select class="select" id="fill">
+						<option value="none" selected>None</option>
+						<option value="black">Black</option>
+						<option value="white">White</option>
+					</select>
+				</div>
+				<p class="hint editor__hint" id="tool-hint"></p>
+			</div>
+
+			<div class="editor__area" id="area" data-cursor="crosshair">
+				<div class="editor__stage">
+					<canvas class="editor__canvas" id="canvas" width="800" height="480" tabindex="0"
+						aria-label="The frame. Draw with the tools, or with the Move tool, use the arrow keys to move the layer."></canvas>
+					<div class="editor__grid" id="grid" hidden></div>
+					<!-- The active photo's or text's box; a text box is resized by its handles (D50). -->
+					<div class="editor__bounds" id="bounds" hidden>
+						<span class="handle" data-handle="nw"></span>
+						<span class="handle" data-handle="n"></span>
+						<span class="handle" data-handle="ne"></span>
+						<span class="handle" data-handle="e"></span>
+						<span class="handle" data-handle="se"></span>
+						<span class="handle" data-handle="s"></span>
+						<span class="handle" data-handle="sw"></span>
+						<span class="handle" data-handle="w"></span>
+					</div>
+				</div>
+			</div>
+
+			<div class="editor__zoom" role="group" aria-label="Zoom">
+				<button type="button" class="button button--icon" id="zoom-out" aria-label="Zoom out" aria-keyshortcuts="-">−</button>
+				<output class="editor__zoom-value" id="zoom-value" aria-live="polite">100%</output>
+				<button type="button" class="button button--icon" id="zoom-in" aria-label="Zoom in" aria-keyshortcuts="+">+</button>
+				<button type="button" class="button" id="zoom-fit" aria-pressed="true" aria-keyshortcuts="0">Fit</button>
+				<button type="button" class="button" id="zoom-actual" aria-pressed="false" aria-keyshortcuts="1">Actual pixels</button>
+			</div>
+		</div>
+
+		<div class="editor__side">
+			<section class="editor__layers" aria-labelledby="layers-title">
+				<div class="section-title">
+					<h2 id="layers-title">Layers</h2>
+					<div class="button-row">
+						<button type="button" class="button" id="new-layer">New layer</button>
+						<input class="visually-hidden file-input" type="file" id="photo" accept="image/*">
+						<label class="button" for="photo">Add photo</label>
+					</div>
+				</div>
+				<ol class="layer-list" id="layer-list" aria-label="Layers, the top one first"></ol>
+				<div class="button-row layer-actions">
+					<button type="button" class="button button--icon" id="layer-up" aria-label="Move the layer up">↑</button>
+					<button type="button" class="button button--icon" id="layer-down" aria-label="Move the layer down">↓</button>
+					<button type="button" class="button button--danger" id="layer-delete">Delete layer</button>
+				</div>
+			</section>
+
+			<section class="editor__settings stack" aria-labelledby="settings-title">
+				<h2 id="settings-title">Layer</h2>
+				<p class="hint" id="no-layer" hidden>No layer. Add one to draw on, or add a photo.</p>
+				<div class="field" id="layer-name-field">
+					<label class="label" for="layer-name">Name</label>
+					<input class="input" type="text" id="layer-name" maxlength="100" autocomplete="off">
+				</div>
+				<fieldset class="fieldset" id="photo-settings" hidden>
+					<legend class="visually-hidden">Photo</legend>
+					<div class="field">
+						<div class="field__row">
+							<label for="size">Size</label>
+							<output id="size-value" for="size">100%</output>
+						</div>
+						<input class="range" type="range" id="size" min="5" max="300" step="1" value="100">
+						<div class="button-row">
+							<button type="button" class="button" id="cover">Cover the frame</button>
+							<button type="button" class="button" id="whole-photo">Whole photo</button>
+						</div>
+					</div>
+					<div class="field">
+						<div class="field__row">
+							<label for="brightness">Brightness</label>
+							<output id="brightness-value" for="brightness">0</output>
+						</div>
+						<input class="range" type="range" id="brightness" min="-100" max="100" step="1" value="0">
+					</div>
+					<div class="field">
+						<div class="field__row">
+							<label for="contrast">Contrast</label>
+							<output id="contrast-value" for="contrast">0</output>
+						</div>
+						<input class="range" type="range" id="contrast" min="-100" max="100" step="1" value="0">
+					</div>
+					<div class="field">
+						<label for="method">Dithering</label>
+						<select class="select" id="method">
+							<option value="floyd-steinberg" selected>Floyd–Steinberg</option>
+							<option value="atkinson">Atkinson</option>
+							<option value="threshold">50% threshold</option>
+						</select>
+					</div>
+					<div>
+						<button type="button" class="button" id="reset">Reset adjustments</button>
+					</div>
+				</fieldset>
+				<fieldset class="fieldset" id="text-settings" hidden>
+					<legend class="visually-hidden">Text</legend>
+					<div class="field">
+						<label for="text">Text</label>
+						<textarea class="input textarea" id="text" rows="4" autocomplete="off"></textarea>
+						<p class="hint" id="text-overflow" hidden>Some of the text doesn't fit: make the box bigger, or the text smaller.</p>
+					</div>
+					<div class="field">
+						<label for="text-size">Size</label>
+						<select class="select" id="text-size">
+							<option value="small">Small</option>
+							<option value="medium" selected>Medium</option>
+							<option value="large">Large</option>
+						</select>
+					</div>
+					<div class="field">
+						<label for="text-align">Alignment</label>
+						<select class="select" id="text-align">
+							<option value="left" selected>Left</option>
+							<option value="center">Center</option>
+							<option value="right">Right</option>
+						</select>
+					</div>
+					<div class="field">
+						<label for="text-color">Color</label>
+						<select class="select" id="text-color">
+							<option value="black" selected>Black</option>
+							<option value="white">White</option>
+						</select>
+					</div>
+				</fieldset>
+			</section>
+		</div>
+
+		<div class="field editor__name">
+			<label class="label" for="name">Frame name</label>
+			<input class="input" type="text" id="name" maxlength="100" required autocomplete="off">
+			<p class="field-error" data-error-for="name" hidden></p>
+		</div>
+
+		<div class="action-bar">
+			<a class="button" th:href="@{/frames}">Cancel</a>
+			<button type="submit" class="button button--primary" id="save">Save</button>
+		</div>
+	</form>
+</main>
+
+<template id="layer-row">
+	<li class="layer">
+		<button type="button" class="button button--icon button--plain layer__visible" data-part="visible" aria-pressed="true">
+			<svg class="layer__shown" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+			<svg class="layer__hidden" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM4 4l16 16"/></svg>
+		</button>
+		<button type="button" class="layer__select" data-part="select">
+			<span class="layer__name"></span>
+			<span class="hint layer__kind"></span>
+		</button>
+	</li>
+</template>
+
+<script type="module" th:src="@{/js/editor.js}"></script>
+</body>
+</html>

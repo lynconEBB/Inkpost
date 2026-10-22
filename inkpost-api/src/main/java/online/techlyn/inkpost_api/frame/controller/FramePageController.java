@@ -13,8 +13,8 @@ public class FramePageController {
 	}
 
 	@GetMapping("/frames/new")
-	public String upload() {
-		return "frame-upload";
+	public String editor() {
+		return "frame-editor";
 	}
 
 }

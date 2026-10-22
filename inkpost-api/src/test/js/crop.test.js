@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { centered, clampOffset, coverScale, coverSize } from "../../main/resources/static/js/crop.js";
+import { coverScale, coverSize, fitScale, photoRect, visiblePart } from "../../main/resources/static/js/crop.js";
 
 const close = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-9, `${actual} is not ${expected}`);
 
@@ -31,37 +31,60 @@ describe("the cover scale", () => {
 	});
 });
 
-describe("the offset", () => {
-	test("starts centered", () => {
-		const wide = centered(coverSize(1920, 1080));
-		close(wide.x, -26.666666666666686);
-		assert.equal(wide.y, 0);
-		assert.deepEqual(centered(coverSize(4032, 3024)), { x: 0, y: -60 });
+describe("the photo's place", () => {
+	test("covers the frame, centered, at scale 1", () => {
+		assert.deepEqual(photoRect(4032, 3024, 1, 400, 240), { left: 0, top: -60, width: 800, height: 600 });
+		assert.deepEqual(photoRect(1920, 1080, 1, 400, 240), { left: -26, top: 0, width: 853, height: 480 });
 	});
 
-	test("is clamped so the frame stays covered", () => {
-		const size = coverSize(4032, 3024);
-		assert.deepEqual(clampOffset({ x: 0, y: 10 }, size), { x: 0, y: 0 });
-		assert.deepEqual(clampOffset({ x: 0, y: -500 }, size), { x: 0, y: -120 });
-		assert.deepEqual(clampOffset({ x: 0, y: -45 }, size), { x: 0, y: -45 });
+	test("keeps its center when the scale changes", () => {
+		assert.deepEqual(photoRect(4032, 3024, 0.5, 400, 240), { left: 200, top: 90, width: 400, height: 300 });
+		assert.deepEqual(photoRect(4032, 3024, 2, 400, 240), { left: -400, top: -360, width: 1600, height: 1200 });
 	});
 
-	test("only moves sideways for a photo wider than 5:3", () => {
-		const size = coverSize(1920, 1080);
-		const offset = clampOffset({ x: -40, y: -40 }, size);
-		assert.equal(offset.x, -40);
-		assert.equal(offset.y, 0);
-		close(clampOffset({ x: -400, y: 0 }, size).x, 800 - 853.3333333333334);
+	test("goes anywhere, in whole pixels", () => {
+		assert.deepEqual(photoRect(1600, 960, 0.25, -30.4, 600.6), { left: -130, top: 541, width: 200, height: 120 });
 	});
 
-	test("only moves up and down for a portrait photo", () => {
-		const size = coverSize(3024, 4032);
-		const offset = clampOffset({ x: -40, y: -40 }, size);
-		assert.equal(offset.x, 0);
-		assert.equal(offset.y, -40);
+	test("is at least a pixel", () => {
+		assert.deepEqual(photoRect(1600, 960, 0.0001, 10, 10), { left: 10, top: 10, width: 1, height: 1 });
 	});
 
-	test("can't move a 5:3 photo at all", () => {
-		assert.deepEqual(clampOffset({ x: -30, y: 30 }, coverSize(1600, 960)), { x: 0, y: 0 });
+	test("shows the whole photo at the fit scale", () => {
+		const portrait = photoRect(3024, 4032, fitScale(3024, 4032), 400, 240);
+		assert.equal(portrait.height, 480);
+		assert.equal(portrait.width, 360);
+		const wide = photoRect(1920, 1080, fitScale(1920, 1080), 400, 240);
+		assert.equal(wide.width, 800);
+		assert.equal(wide.height, 450);
+		assert.equal(fitScale(1600, 960), 1);
+	});
+});
+
+describe("the visible part", () => {
+	test("is the whole rectangle inside the frame", () => {
+		const rect = { left: 10, top: 20, width: 30, height: 40 };
+		assert.deepEqual(visiblePart(rect), rect);
+	});
+
+	test("is cut at the frame's edges", () => {
+		assert.deepEqual(visiblePart({ left: -60, top: -10, width: 1600, height: 100 }), {
+			left: 0,
+			top: 0,
+			width: 800,
+			height: 90,
+		});
+		assert.deepEqual(visiblePart({ left: 790, top: 470, width: 50, height: 50 }), {
+			left: 790,
+			top: 470,
+			width: 10,
+			height: 10,
+		});
+	});
+
+	test("is null for a rectangle outside the frame, or only touching it", () => {
+		assert.equal(visiblePart({ left: 800, top: 0, width: 10, height: 10 }), null);
+		assert.equal(visiblePart({ left: -10, top: 0, width: 10, height: 10 }), null);
+		assert.equal(visiblePart({ left: 0, top: 480, width: 10, height: 10 }), null);
 	});
 });
