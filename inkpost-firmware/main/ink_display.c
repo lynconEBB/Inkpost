@@ -141,7 +141,7 @@ static void release(void)
     }
 }
 
-static esp_err_t setup_pins_and_spi(void)
+static esp_err_t setup_pins(void)
 {
     RETURN_ON_ERROR(gpio_hold_dis(PIN_PWR)); // Held low by release(), maybe since before a deep sleep
     if (!s_pins_configured) {
@@ -157,6 +157,12 @@ static esp_err_t setup_pins_and_spi(void)
         RETURN_ON_ERROR(gpio_config(&busy));
         s_pins_configured = true;
     }
+    return ESP_OK;
+}
+
+static esp_err_t setup_pins_and_spi(void)
+{
+    RETURN_ON_ERROR(setup_pins());
     gpio_set_level(PIN_CS, 1);
     gpio_set_level(PIN_PWR, 1);
 
@@ -305,6 +311,13 @@ esp_err_t ink_display_clear(void)
 esp_err_t ink_display_draw_checker(void)
 {
     return logged("draw checker", refresh(checker_byte, NULL));
+}
+
+void ink_display_power_off(void)
+{
+    if (s_spi == NULL && setup_pins() == ESP_OK) {
+        release();
+    }
 }
 
 esp_err_t ink_display_deinit(void)
