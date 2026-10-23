@@ -1,0 +1,2 @@
+build123d==0.13.0
+ocp_viewer==1.2.0

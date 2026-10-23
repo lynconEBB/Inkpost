@@ -6,6 +6,8 @@ A gift: a picture frame with a Waveshare 7.5" e-paper display driven by an ESP32
 
 - `inkpost-firmware/`: ESP-IDF firmware for the ESP32 that drives the e-paper display and fetches content from the API.
 - `inkpost-api/`: the API that decides and serves what the frame displays.
+- `inkpost-mount/`: the 3D-printed case. `case.py` (build123d) builds it; see its header for how to
+  run it and the browser viewer. `prototype.blend` is the online design it started from.
 
 ## Git workflow
 
