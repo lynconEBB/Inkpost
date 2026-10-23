@@ -608,9 +608,10 @@ everywhere (it was 18.5 mm under the bump), so the boards must fit in that.
 ### D52. The case is a build123d script, a square-edged concept of D51's design
 `inkpost-mount/case.py` builds the case with build123d and writes STL files to print and a STEP file;
 `ocp_viewer` shows it in a browser. Every size is a named number at the top of the script.
-- A 171 × 92.9 × 30 mm box, flat on top, no rounded edges, with 5 mm side and back walls. Its front
+- A 171 × 80 × 30 mm box, flat on top, no rounded edges, with 5 mm side and back walls. Its front
   face leans back 20°, parallel to the panel, 2 mm in front of the groove, so the top is about
-  82 mm deep. The depth is set by what goes inside (D53).
+  69 mm deep. The depth is a round number a little more than what goes inside needs (D53); the
+  script checks that it is enough.
 - The panel stands in a groove along the front, as in the original: 20° back from vertical, open
   at both ends, its floor 9 mm below the top. It is 1.5 mm wide front to back (1.41 mm square to
   the panel, which is about 1.2 mm thick), a little wider than the original's 1.38.
@@ -621,10 +622,10 @@ everywhere (it was 18.5 mm under the bump), so the boards must fit in that.
   above the grooves keeps it from lifting out. The grooves and lips run out through the right
   wall, which is open between the lips, so there is no bar over the lid's end. Closed, its end is
   flush with the right wall and its top 2.4 mm below the top.
-- The compartment's front wall leans back like the front face, 7.7 mm thick, rather than standing
-  upright behind a solid wedge of plastic. So the compartment is 79 mm deep on the floor and 70 mm
-  under the lid. The lid's front groove is 2 mm deep at its floor, where the lid rests; the
-  leaning wall makes it deeper higher up.
+- The compartment's front wall stands straight up inside, so it prints without supports; it is
+  thickest at the floor, as the front face leans back. It stands where a wall leaning with the
+  front face would be at the lid's grooves, so the lid's front groove is 2 mm deep and 1.7 mm of
+  wall is left between it and the panel's groove. The compartment is 57.5 mm deep.
 - The panel's cable goes from the groove's floor into the compartment through an opening 30 mm wide
   and 6 mm tall, placed along the bar where the original has it.
 
@@ -635,17 +636,18 @@ mesh in Blender doesn't.
 Each board gets a frame of walls on the floor, 10 mm tall and 3 mm thick, 0.5 mm larger than the
 board on each side, with a square post in each corner that holds the board 5 mm off the floor.
 M2.5 × 5 screws go through the board's holes into the posts.
-- The ESP32 NodeMCU (55 × 28 mm) lies front to back in the middle of the bar, against the back
-  wall, which is its frame's fourth side. A 12 × 7 mm hole in the back wall, level with its USB
-  port, lets the cable plug in from outside.
-- 20 mm of free space between the compartment's front wall and the ESP32's frame lets the panel's
-  cable come out of its opening and turn aside. The case's depth follows from this and the board.
+Both boards lie along the bar, which keeps the case shallow.
+- The ESP32 NodeMCU (55 × 32 mm) lies in the back left corner; its frame's left and back walls are
+  inside the case's. A 12 × 7 mm hole in the left wall, level with its USB port, lets the cable
+  plug in from outside.
+- At least 20 mm of free space between the compartment's front wall and the ESP32's frame lets the
+  panel's cable come out of its opening and turn aside. The case's depth follows from this and the
+  ESP32, the deeper board.
 - The ESP32's hole positions are typical values (3 mm holes, 2.5 mm from the edges) until measured.
-- The e-Paper Driver HAT (65 × 30.2 mm) lies front to back against the back wall like the ESP32,
-  in the middle of the space to its right; the back wall has no hole for it. Its frame has an 18 mm
-  gap in the middle of each long wall for its flat cables. Its holes follow the Raspberry Pi Zero
-  layout it is made to sit on, 3.5 mm from the edges. Its two front screws are about 1 mm under the
-  leaning front wall, so the screwdriver goes in a little tilted.
+- The e-Paper Driver HAT (65 × 30.2 mm) lies in the middle of the space right of the ESP32, and of
+  the compartment's depth, so the 18 mm gaps in the middle of its frame's long walls, for its flat
+  cables, are both free. Its holes follow the Raspberry Pi Zero layout it is made to sit on,
+  3.5 mm from the edges.
 
 **Why:** the frame places the board without measuring, and screws keep it there.
 

@@ -28,7 +28,7 @@ from build123d import (
 )
 from ocp_viewer import show
 
-# Outside. The depth comes from what goes inside; see DEPTH below the ESP32.
+# Outside. The depth comes from what goes inside; see DEPTH below the HAT.
 LENGTH = 171.0  # the panel is 170.2 wide
 HEIGHT = 30.0  # flat top
 WALL = 5.0  # sides and back; leaves 3 mm behind the lid's grooves
@@ -66,16 +66,15 @@ LID_LIP = 2.0  # of wall above the grooves
 LID_CLEARANCE = 0.2  # between the lid's edges and the bottom of the grooves
 LID_GROOVE_Z = HEIGHT - LID_LIP - LID_GROOVE_HEIGHT  # the grooves' floor, which the lid rests on
 
-# The compartment's front wall leans back like the front face, at an even thickness. It leaves
-# GROOVE_BACK_WALL between the panel's groove and the lid's, and the lid's groove is LID_GROOVE_DEPTH
-# deep at its floor. There the wall is COMPARTMENT_FRONT_Y from the front; on the floor,
-# COMPARTMENT_FLOOR_Y.
+# The compartment's front wall stands straight up inside, so it prints without supports, and gets
+# thicker towards the floor as the front face leans back. It leaves GROOVE_BACK_WALL between the
+# panel's groove and the lid's, and the lid's groove is LID_GROOVE_DEPTH deep into it; inside, the
+# wall is COMPARTMENT_FRONT_Y from the front.
 GROOVE_BACK_WALL = 1.7
 LID_GROOVE_FRONT_Y = (
     GROOVE_FRONT_Y + LEAN * (HEIGHT - LID_LIP - GROOVE_FLOOR_Z) + GROOVE_WIDTH + GROOVE_BACK_WALL
 )
 COMPARTMENT_FRONT_Y = LID_GROOVE_FRONT_Y + LID_GROOVE_DEPTH
-COMPARTMENT_FLOOR_Y = COMPARTMENT_FRONT_Y - LEAN * (LID_GROOVE_Z - FLOOR)
 
 # Boards sit in a frame of low walls on the floor, screwed onto a post in each corner of the frame
 BOARD_CLEARANCE = 0.5  # around a board, inside its frame
@@ -84,28 +83,32 @@ FRAME_HEIGHT = 10.0  # above the floor
 BOARD_STANDOFF = 5.0  # the posts hold a board this far above the floor
 BOARD_SCREW_PILOT = 2.0  # for M2.5 x 5 screws, which pass through ~3 mm board holes
 
-# ESP32 NodeMCU board, lying front to back in the middle of the bar, against the back wall with its
-# USB port through it. The holes are typical values, not measured yet.
-ESP32_LENGTH, ESP32_WIDTH, ESP32_THICKNESS = 55.0, 28.0, 1.6
+# ESP32 NodeMCU board, lying along the bar in the back left corner with its USB port through the left
+# wall. The holes are typical values, not measured yet.
+ESP32_LENGTH, ESP32_WIDTH, ESP32_THICKNESS = 55.0, 32.0, 1.6
 ESP32_HOLE_INSET = 2.5  # hole centres from the board's edges, in each corner
-ESP32_USB = (8.0, 5.5, 2.0)  # socket on top at the back edge: wide, deep, tall
-USB_HOLE = (12.0, 7.0)  # through the back wall, for the cable's plug: wide, tall
+ESP32_USB = (8.0, 5.5, 2.0)  # socket on top at the left end: wide, deep, tall
+USB_HOLE = (12.0, 7.0)  # through the left wall, for the cable's plug: wide, tall
 
-# Free space on the floor between the compartment's front wall and the ESP32's frame, for the
+# Free space on the floor between the compartment's front wall and the boards' frames, for the
 # panel's cable to come down from its opening and turn aside
 CABLE_ROOM = 20.0
 
-# At the bottom; the front leans back, so the top is LEAN * HEIGHT less
-DEPTH = (
-    COMPARTMENT_FLOOR_Y + CABLE_ROOM + FRAME_WALL + 2 * BOARD_CLEARANCE + ESP32_LENGTH + WALL
-)
-
-# Waveshare e-Paper Driver HAT, lying front to back against the back wall like the ESP32, in the
-# middle of the space to its right. Its flat cables leave through a gap in the middle of each long
-# wall of its frame. The holes follow the Raspberry Pi Zero layout the HAT is made to sit on.
+# Waveshare e-Paper Driver HAT, lying along the bar in the middle of the space right of the ESP32,
+# and of the compartment's depth. Its flat cables leave through a gap in the middle of each long
+# wall of its frame, both free of the compartment's walls. The holes follow the Raspberry Pi Zero
+# layout the HAT is made to sit on.
 HAT_LENGTH, HAT_WIDTH, HAT_THICKNESS = 65.0, 30.2, 1.6
 HAT_HOLE_INSET = 3.5  # hole centres from the board's edges, in each corner
 HAT_CABLE_GAP = 18.0
+
+# At the bottom; the front leans back, so the top is LEAN * HEIGHT less. A round number, a little
+# more than the boards need; the rest goes to the cable's room.
+DEPTH = 80.0
+assert DEPTH >= (
+    COMPARTMENT_FRONT_Y + CABLE_ROOM + FRAME_WALL + 2 * BOARD_CLEARANCE + max(ESP32_WIDTH, HAT_WIDTH)
+    + WALL
+)
 
 MIN = (Align.MIN, Align.MIN, Align.MIN)
 UP = (Align.CENTER, Align.CENTER, Align.MIN)
@@ -117,17 +120,18 @@ def lid_corner():
 
 
 def esp32_corner():
-    """The ESP32's corner nearest the origin: in the middle of the bar, against the back wall."""
-    return (LENGTH - ESP32_WIDTH) / 2, DEPTH - WALL - BOARD_CLEARANCE - ESP32_LENGTH
+    """The ESP32's corner nearest the origin: against the left and back walls."""
+    return WALL + BOARD_CLEARANCE, DEPTH - WALL - BOARD_CLEARANCE - ESP32_WIDTH
 
 
 def hat_corner():
-    """The HAT's corner nearest the origin: against the back wall, in the middle of the space right
-    of the ESP32's frame."""
+    """The HAT's corner nearest the origin: in the middle of the space right of the ESP32's frame,
+    and of the compartment's depth."""
     esp32_x, _ = esp32_corner()
-    left = esp32_x + ESP32_WIDTH + BOARD_CLEARANCE + FRAME_WALL
+    left = esp32_x + ESP32_LENGTH + BOARD_CLEARANCE + FRAME_WALL
     right = LENGTH - WALL
-    return (left + right - HAT_WIDTH) / 2, DEPTH - WALL - BOARD_CLEARANCE - HAT_LENGTH
+    front, back = COMPARTMENT_FRONT_Y, DEPTH - WALL
+    return (left + right - HAT_LENGTH) / 2, (front + back - HAT_WIDTH) / 2
 
 
 def board_holes(corner, width, length, inset):
@@ -149,9 +153,9 @@ def board_frame(corner, width, length, inset, cable_gap=0.0):
     )
     frame = outside - inside
     if cable_gap:
-        frame -= Pos(x + width / 2, y + length / 2, FLOOR) * Box(
-            width + 2 * (c + FRAME_WALL) + 2, cable_gap, FRAME_HEIGHT + 1, align=UP
-        )
+        across = max(width, length) + 2 * (c + FRAME_WALL) + 2
+        gap = (cable_gap, across) if width > length else (across, cable_gap)
+        frame -= Pos(x + width / 2, y + length / 2, FLOOR) * Box(*gap, FRAME_HEIGHT + 1, align=UP)
 
     post = 2 * (inset + c)
     posts = [
@@ -171,11 +175,6 @@ def along_bar(*points):
     return prism(points, -1, LENGTH + 1)
 
 
-def compartment_front(z):
-    """How far back the compartment's leaning front wall is at height z."""
-    return COMPARTMENT_FRONT_Y - LEAN * (LID_GROOVE_Z - z)
-
-
 def body():
     case = Box(LENGTH, DEPTH, HEIGHT, align=MIN)
 
@@ -185,7 +184,7 @@ def body():
 
     back = DEPTH - WALL
     compartment = prism(
-        [(compartment_front(FLOOR), FLOOR), (back, FLOOR), (back, top), (compartment_front(top), top)],
+        [(COMPARTMENT_FRONT_Y, FLOOR), (back, FLOOR), (back, top), (COMPARTMENT_FRONT_Y, top)],
         WALL,
         LENGTH - WALL,
     )
@@ -196,8 +195,7 @@ def body():
     lid_way = Pos(groove_x, LID_GROOVE_FRONT_Y, LID_GROOVE_Z) * Box(
         LENGTH + 1 - groove_x, way_depth, LID_GROOVE_HEIGHT, align=MIN
     ) + prism(
-        [(compartment_front(LID_GROOVE_Z), LID_GROOVE_Z), (back, LID_GROOVE_Z), (back, top),
-         (compartment_front(top), top)],
+        [(COMPARTMENT_FRONT_Y, LID_GROOVE_Z), (back, LID_GROOVE_Z), (back, top), (COMPARTMENT_FRONT_Y, top)],
         LENGTH - WALL - 1,
         LENGTH + 1,
     )
@@ -208,12 +206,12 @@ def body():
     groove = along_bar((y0, z0), (y0 + w, z0), (y0 + w + LEAN * rise, top), (y0 + LEAN * rise, top))
 
     cable = Pos(CABLE_X, GROOVE_FRONT_Y, GROOVE_FLOOR_Z - CABLE_HEIGHT) * Box(
-        CABLE_WIDTH, compartment_front(GROOVE_FLOOR_Z) + 1 - GROOVE_FRONT_Y, CABLE_HEIGHT, align=MIN
+        CABLE_WIDTH, COMPARTMENT_FRONT_Y + 1 - GROOVE_FRONT_Y, CABLE_HEIGHT, align=MIN
     )
 
-    # Both frames have their back wall inside the case's back wall
-    esp32_board = (esp32_corner(), ESP32_WIDTH, ESP32_LENGTH, ESP32_HOLE_INSET)
-    hat_board = (hat_corner(), HAT_WIDTH, HAT_LENGTH, HAT_HOLE_INSET)
+    # Both boards lie along the bar. The ESP32's frame has its left and back walls inside the case's.
+    esp32_board = (esp32_corner(), ESP32_LENGTH, ESP32_WIDTH, ESP32_HOLE_INSET)
+    hat_board = (hat_corner(), HAT_LENGTH, HAT_WIDTH, HAT_HOLE_INSET)
     frames = board_frame(*esp32_board) + board_frame(*hat_board, cable_gap=HAT_CABLE_GAP)
 
     # Board screw holes go 1 mm into the floor
@@ -223,10 +221,10 @@ def body():
         for x, y in board_holes(*board)
     ]
 
-    # The ESP32's USB plug goes in through the back wall, level with the socket
-    esp32_x, _ = esp32_corner()
+    # The ESP32's USB plug goes in through the left wall, level with the socket
+    _, esp32_y = esp32_corner()
     usb_z = FLOOR + BOARD_STANDOFF + ESP32_THICKNESS + ESP32_USB[2] / 2
-    usb_hole = Pos(esp32_x + ESP32_WIDTH / 2, DEPTH - WALL / 2, usb_z) * Box(USB_HOLE[0], WALL + 2, USB_HOLE[1])
+    usb_hole = Pos(WALL / 2, esp32_y + ESP32_WIDTH / 2, usb_z) * Box(WALL + 2, USB_HOLE[0], USB_HOLE[1])
 
     return (
         case - front - compartment - lid_way - groove - cable + frames - board_pilots - usb_hole
@@ -255,10 +253,10 @@ def esp32():
     """The ESP32 board on its posts, with its USB port, only to see it in place; not printed."""
     x, y = esp32_corner()
     z = FLOOR + BOARD_STANDOFF
-    board = Pos(x, y, z) * Box(ESP32_WIDTH, ESP32_LENGTH, ESP32_THICKNESS, align=MIN)
+    board = Pos(x, y, z) * Box(ESP32_LENGTH, ESP32_WIDTH, ESP32_THICKNESS, align=MIN)
     width, depth, height = ESP32_USB
-    usb = Pos(x + ESP32_WIDTH / 2, y + ESP32_LENGTH - depth / 2, z + ESP32_THICKNESS) * Box(
-        width, depth, height, align=UP
+    usb = Pos(x + depth / 2, y + ESP32_WIDTH / 2, z + ESP32_THICKNESS) * Box(
+        depth, width, height, align=UP
     )
     return board + usb
 
@@ -266,7 +264,7 @@ def esp32():
 def hat():
     """The e-Paper driver HAT on its posts, only to see it in place; not printed."""
     x, y = hat_corner()
-    return Pos(x, y, FLOOR + BOARD_STANDOFF) * Box(HAT_WIDTH, HAT_LENGTH, HAT_THICKNESS, align=MIN)
+    return Pos(x, y, FLOOR + BOARD_STANDOFF) * Box(HAT_LENGTH, HAT_WIDTH, HAT_THICKNESS, align=MIN)
 
 
 if __name__ == "__main__":
@@ -283,9 +281,8 @@ if __name__ == "__main__":
     export_step(Compound(children=[case_body, in_place]), out / "case.step")
 
     print("case: %.1f x %.1f x %.1f mm (%.1f deep on top)" % (LENGTH, DEPTH, HEIGHT, DEPTH - LEAN * HEIGHT))
-    inside = (LENGTH - 2 * WALL, DEPTH - WALL - COMPARTMENT_FLOOR_Y, DEPTH - WALL - COMPARTMENT_FRONT_Y,
-              LID_GROOVE_Z - FLOOR)
-    print("compartment inside: %.1f long, %.1f deep on the floor and %.1f under the lid, %.1f tall" % inside)
+    inside = (LENGTH - 2 * WALL, DEPTH - WALL - COMPARTMENT_FRONT_Y, LID_GROOVE_Z - FLOOR)
+    print("compartment inside: %.1f long, %.1f deep, %.1f tall" % inside)
 
     show(case_body, in_place, panel(), esp32(), hat(), names=["body", "lid", "panel", "esp32", "hat"],
          colors=["#d0d0d0", "#7fa7d9", "#303030", "#2e7d32", "#1565c0"], alphas=[1.0, 1.0, 0.6, 1.0, 1.0])
