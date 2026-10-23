@@ -651,6 +651,27 @@ Both boards lie along the bar, which keeps the case shallow.
 
 **Why:** the frame places the board without measuring, and screws keep it there.
 
+### D54. Version 2: the case in pieces held by pins, like Lego
+`inkpost-mount/case_v2.py` builds D52's case in six pieces: a base, four walls and the lid, which
+is unchanged. `case.py` stays as the one-piece version.
+- The base is the whole footprint, 4 mm thick (2 mm in one piece), with the boards' frames on it.
+  The left and back walls stand where the ESP32's frame's left and back walls would be, so the
+  frame has only the other two.
+- The walls stand on the base. The front and back walls run the whole length; the left and right
+  walls go between them, 0.2 mm short at each end so the pieces fit whatever the printer adds.
+- Each wall has pins under it, 3 mm across and 2.5 mm long with a chamfered tip, in the middle of
+  its thickness: four under the front and back walls, two under each side wall. They go into
+  3.2 mm holes in the base, 3 mm deep so the wall rests on the base, not the pin. The holes' size
+  is one number to change once a print shows how tight they are.
+- The left and right walls also have two level pins at each end, the same size, into holes in the
+  front and back walls' inner faces, at 9.4 and 20.2 mm up: below the lid's grooves, so the front
+  wall's holes are clear of them and of the panel's groove. Two at each end keep the joint from
+  turning.
+- Closed, the lid sits in the front, left and back walls' grooves and holds their tops together.
+- Each wall prints upside down on its flat top, pins up, so no piece needs supports.
+
+**Why:** pins hold the pieces without glue or screws, so the case can be taken apart again.
+
 ## Guiding principle
 
 Prefer doing a few things well over supporting many features or edge cases. When in doubt,
