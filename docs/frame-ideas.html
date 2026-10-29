@@ -1,0 +1,2254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inkpost · frame ideas</title>
+<!--
+	Frame ideas for the Inkpost frame, drawn the way the panel shows them: 800 × 480, black and white
+	only (D4), text in the editor's font and sizes (D22). Open the file in a browser; it needs no server.
+
+	Every frame is drawn on a canvas, then every pixel is turned to pure black or white (50 %), so what
+	you see is what the frame would show. The dog is Luli, a brown dachshund, with her halo. In the
+	message frames she and the small props are pixel art: grids of letters (see SPRITES), drawn at a
+	whole number of pixels per cell, with a 1-cell outline added around them. The Luli frames draw her
+	from curves instead (see LULI): a cartoon with flat tones in dots, the style chosen for her.
+-->
+<style>
+	:root {
+		--ink: #1f1d1a;
+		--muted: #6b665e;
+		--bg: #f3f0ea;
+		--line: #ddd7cc;
+		--wood: #2a2622;
+		--tap: 2.75rem;
+		font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+		color: var(--ink);
+		background: var(--bg);
+	}
+	* { box-sizing: border-box; }
+	body { margin: 0; }
+	header, .controls, .filters, main { max-width: 96rem; margin: 0 auto; padding-inline: 1rem; }
+	header { padding-top: 1.5rem; }
+	h1 { margin: 0 0 .35rem; font-size: 1.6rem; }
+	header p { margin: .25rem 0; color: var(--muted); max-width: 52rem; line-height: 1.45; }
+	.controls { display: flex; flex-wrap: wrap; gap: .75rem 1.25rem; align-items: end; margin-top: 1.25rem; }
+	.controls label { display: grid; gap: .25rem; font-size: .85rem; color: var(--muted); }
+	.controls input[type=text], .controls select {
+		font: inherit; font-size: 1rem; min-height: var(--tap); padding: 0 .6rem; color: var(--ink);
+		border: 1px solid var(--line); border-radius: .4rem; background: #fff;
+	}
+	.controls label.check { display: flex; align-items: center; gap: .45rem; min-height: var(--tap); font-size: 1rem; color: var(--ink); }
+	.controls input[type=checkbox] { width: 1.2rem; height: 1.2rem; }
+	.filters { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+	.filters button {
+		font: inherit; min-height: var(--tap); padding: 0 1rem; cursor: pointer; color: var(--ink);
+		border: 1px solid var(--line); border-radius: 999px; background: #fff;
+	}
+	.filters button[aria-pressed=true] { background: var(--ink); border-color: var(--ink); color: #fff; }
+	main {
+		display: grid; gap: 1.5rem; padding-block: 1.25rem 3rem;
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 25rem), 1fr));
+	}
+	body.actual main { grid-template-columns: 1fr; justify-items: start; overflow-x: auto; }
+	.card { display: flex; flex-direction: column; background: #fff; border: 1px solid var(--line); border-radius: .75rem; overflow: hidden; }
+	.card[hidden] { display: none; }
+	/* The picture frame around the panel. */
+	.frame { padding: 1rem; background: var(--wood); }
+	.frame canvas { display: block; width: 100%; height: auto; cursor: zoom-in; }
+	body.actual .frame canvas { width: 800px; image-rendering: pixelated; }
+	/* E-paper isn't paper white or ink black. */
+	body.paper canvas { filter: contrast(.8) brightness(.94) sepia(.12); }
+	.info { display: grid; gap: .3rem; padding: .75rem 1rem 1rem; }
+	.info h2 { margin: 0; font-size: 1rem; }
+	.info .when { font-size: .875rem; color: var(--muted); }
+	.info .when.code { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: .8rem; overflow-wrap: anywhere; }
+	.info .text { font-size: .875rem; font-style: italic; }
+	.info button {
+		justify-self: start; margin-top: .35rem; min-height: var(--tap); padding: 0 1rem; cursor: pointer;
+		font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: .4rem;
+	}
+	dialog { padding: 1.25rem; border: 0; background: var(--wood); max-width: 98vw; max-height: 98vh; }
+	dialog::backdrop { background: rgb(0 0 0 / .75); }
+	dialog canvas { display: block; width: min(92vw, calc(88vh * 800 / 480)); image-rendering: pixelated; cursor: zoom-out; }
+	@media (min-width: 40rem) {
+		header, .controls, .filters, main { padding-inline: 2rem; }
+	}
+</style>
+</head>
+<body>
+<header>
+	<h1>Frame ideas</h1>
+	<p>Ideas for the frame: 800 × 480, black and white only, in the editor's font and sizes. Download a
+		PNG and add it in the editor as a photo with <strong>50% threshold</strong>: it comes out pixel for
+		pixel, and you can still add text or draw over it.</p>
+	<p>Click a frame to see it bigger.</p>
+</header>
+
+<form class="controls" id="controls">
+	<label>Her name (or how you call her)
+		<input type="text" id="her" value="meu amor" autocomplete="off">
+	</label>
+	<label class="check"><input type="checkbox" id="halo" checked> Halo</label>
+	<label class="check"><input type="checkbox" id="paper"> E-paper tint</label>
+	<label class="check"><input type="checkbox" id="actual"> Actual pixels (1×)</label>
+</form>
+
+<nav class="filters" id="filters" aria-label="Kinds of frame"></nav>
+
+<main id="grid"></main>
+
+<template id="card-template">
+	<article class="card">
+		<div class="frame"><canvas width="800" height="480"></canvas></div>
+		<div class="info">
+			<h2></h2>
+			<span class="when"></span>
+			<button type="button">Download PNG</button>
+		</div>
+	</article>
+</template>
+
+<dialog id="zoom"><canvas width="800" height="480"></canvas></dialog>
+
+<script>
+"use strict";
+
+const W = 800;
+const H = 480;
+const FONT = '"Inkpost Text"';
+const BLACK = "#000";
+const WHITE = "#fff";
+
+// ---------------------------------------------------------------------------------------------------------
+// Sprites. One letter per cell:
+//   .  nothing          o  coat (or white, for props)   e  ear (the coat's darker part)
+//   n  black            w  white                         #  a black line inside
+//   d  50 % dots        l  25 % dots
+//   h  the line color, never outlined (steam, flames)    a  the halo's color, never outlined
+// Every other cell next to o, e, n, w, #, d or l becomes the outline. Rows may be shorter than the
+// widest one: they're padded with "." on the right.
+// ---------------------------------------------------------------------------------------------------------
+
+const DOG = {
+	standing: {
+		rows: [
+			"...................................ooooo",
+			"..................................ooooooo",
+			".................................ooeeeoooo",
+			".................................oeeeeownoo",
+			".o..............................oeeeeeonnoooo",
+			".oo.............................oeeeeeoooooooonn",
+			".ooo............................oeeeeeoooooooonn",
+			"..ooo..........................ooeeeeeoooooooo",
+			"...ooo..oooooooooooooooooooooooooeeeeeoooooo",
+			"....ooooooooooooooooooooooooooooooeeeeooo",
+			"......ooooooooooooooooooooooooooooeeeooo",
+			"......oooooooooooooooooooooooooooooeeooo",
+			"......oooooooooooooooooooooooooooooooooo",
+			"......oooooooooooooooooooooooooooooooooo",
+			"......ooooooooooooooooooooooooooooooooo",
+			".......ooooooooooooooooooooooooooooooo",
+			".......ooo..ooo.............ooo..ooo",
+			".......ooo..ooo.............ooo..ooo",
+			".......oooo.oooo............oooo.oooo",
+		],
+		halo: [31, -8],
+		glasses: [36, 3],
+		happy: [43, 7],
+	},
+	sleeping: {
+		rows: [
+			"............ooooooooooooooo",
+			".........oooooooooooooooooooooo......ooooo",
+			".......oooooooooooooooooooooooooo...oeeeoooo",
+			"......oooooooooooooooooooooooooooo.oeeeeeoooo",
+			"......oooooooooooooooooooooooooooooeeeeeeooooo",
+			"......oooooooooooooooooooooooooooooeeeeeeo#oo#onn",
+			"......oooooooooooooooooooooooooooooeeeeeeoo##oonn",
+			"......oooooooooooooooooooooooooooooeeeeeeoooooooo",
+			"...oooooooooooooooooooooooooooooooooeeeeeoooooo",
+			".oooooooooooooooooooooooooooooooooooeeee#######o",
+			"oooo...ooooooooooooooooooooooooooooooooooooooooo",
+		],
+		halo: [33, -7],
+	},
+};
+
+const HALO = [
+	"....aaaaaa",
+	"..aa......aa",
+	".a..........a",
+	"..aa......aa",
+	"....aaaaaa",
+];
+
+const GLASSES = [
+	"nnnnwnnn",
+	"...nnwnn",
+	"....nnn",
+];
+
+// A mouth and a tongue, for a happy dog.
+const HAPPY = [
+	"###",
+	".w",
+	".w",
+];
+
+const MUG = [
+	"...h...h",
+	"....h...h",
+	"...h...h",
+	"....h...h",
+	"",
+	"oooooooooo",
+	"oooooooooo.hh",
+	"oonnonnooo...h",
+	"onnnnnnnoo...h",
+	"oonnnnnooo...h",
+	"ooonnnoooo.hh",
+	"oooonooooo",
+	"oooooooooo",
+	".oooooooo",
+];
+
+const BOWL = [
+	".....nn.n.nn",
+	"...nnnnnnnnnnnn",
+	"ooooooooooooooooooo",
+	".oooonooooooooonoo",
+	".ooonnnnnnnnnnnnoo",
+	"..oooonooooooonoo",
+	"...ooooooooooooo",
+];
+
+const GLASS = [
+	"oooooooo",
+	"oooooooo",
+	"oooooooo",
+	"oooooooo",
+	"dddddddd",
+	"dwdddddd",
+	"dwdddddd",
+	"dwdddddd",
+	"dwdddddd",
+	"dddddddd",
+	"dddddddd",
+	".dddddd",
+	".dddddd",
+];
+
+const CAKE = [
+	"....h....h....h",
+	"...hh...hh...hh",
+	"...hh...hh...hh",
+	"",
+	"...o....o....o",
+	"...o....o....o",
+	"nnnnnnnnnnnnnnnnn",
+	"nnonnnonnnnonnnon",
+	"onoonooonoonoooon",
+	"ooooooooooooooooo",
+	"ddddddddddddddddd",
+	"ooooooooooooooooo",
+	"ooooooooooooooooo",
+];
+
+// The star on top is drawn by the frame.
+const TREE = [
+	"........d",
+	".......ddd",
+	"......ddwdd",
+	".....ddddddd",
+	"......ddddd",
+	".....dwddddd",
+	"....ddddddwdd",
+	".....ddddddd",
+	"....ddwdddddd",
+	"...dddddddwddd",
+	"..ddddddddddddd",
+	".dwddddddddddwdd",
+	"......nnnn",
+	"......nnnn",
+];
+
+const GIFT = [
+	"..hh...hh",
+	"...hh.hh",
+	".....h",
+	"ooooonooooo",
+	"ooooonooooo",
+	"nnnnnnnnnnn",
+	"ooooonooooo",
+	"ooooonooooo",
+	"ooooonooooo",
+	"ooooonooooo",
+];
+
+const FLAG = [
+	"hhhhhh",
+	"hddddh",
+	"hddddh",
+	"hhhhhh",
+	"h",
+	"h",
+	"h",
+];
+
+// ---------------------------------------------------------------------------------------------------------
+// Words wrapped to a width, as the editor does it (text.js).
+// ---------------------------------------------------------------------------------------------------------
+
+function wrap(text, width, measure) {
+	const lines = [];
+	for (const paragraph of text.split("\n")) {
+		let line = null;
+		for (const word of paragraph.split(" ")) {
+			const longer = line === null ? word : `${line} ${word}`;
+			if (line === null || measure(longer) <= width) {
+				line = longer;
+			} else {
+				lines.push(line);
+				line = word;
+			}
+		}
+		lines.push(line);
+	}
+	return lines;
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Cells: layers of sprites put together, outlined, and drawn.
+// ---------------------------------------------------------------------------------------------------------
+
+const SOLID = new Set("oenw#dl");
+
+/** Layers ({ rows, x, y }) on one grid, the later ones over the earlier ones, with a free cell all around. */
+function compose(layers) {
+	let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+	for (const { rows, x = 0, y = 0 } of layers) {
+		minX = Math.min(minX, x);
+		minY = Math.min(minY, y);
+		maxX = Math.max(maxX, x + Math.max(...rows.map((row) => row.length)));
+		maxY = Math.max(maxY, y + rows.length);
+	}
+	const cells = Array.from({ length: maxY - minY + 2 }, () => Array(maxX - minX + 2).fill("."));
+	for (const { rows, x = 0, y = 0 } of layers) {
+		rows.forEach((row, rowIndex) => {
+			[...row].forEach((cell, column) => {
+				if (cell !== ".") {
+					cells[rowIndex + y - minY + 1][column + x - minX + 1] = cell;
+				}
+			});
+		});
+	}
+	return cells;
+}
+
+function neighbours(cells, x, y) {
+	return [cells[y - 1]?.[x], cells[y + 1]?.[x], cells[y][x - 1], cells[y][x + 1]];
+}
+
+/** The outline around everything solid. */
+function outline(cells) {
+	const lined = cells.map((row) => [...row]);
+	cells.forEach((row, y) => {
+		row.forEach((cell, x) => {
+			if (cell === "." && neighbours(cells, x, y).some((other) => SOLID.has(other))) {
+				lined[y][x] = "L";
+			}
+		});
+	});
+	return lined;
+}
+
+function mirror(cells) {
+	return cells.map((row) => [...row].reverse());
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Luli: a cartoon with flat tones in dots, in poses. Put her in a frame with p.luli(pose, options):
+//
+//   p.luli("peek")                                   peeking over the bottom edge, in the middle
+//   p.luli("peek", { x: 690, scale: 0.5 })           smaller, in the bottom-right corner
+//   p.luli("side", { x: W, y: 240, flip: true })     peeking in from the right edge
+//   p.luli("trotting", { holding: "letter" })        trotting along the bottom with a letter
+//
+// Where (x, y) puts each pose (LULI_POSES), and where she is without them:
+//   peek, headTop, chin             the middle of the edge she's behind: the bottom edge's middle
+//   upsideDown                      the middle of the edge she hangs from: the top edge's middle
+//   side                            where she comes in on the left edge: halfway down
+//   standing, sausage, sitting,     side-on, facing right: the ground under her, the bottom edge's middle
+//   asleep, trotting
+// Options:
+//   scale     her size (1: about 330 px tall peeking)
+//   flip      mirrored, e.g. to come in from the right edge, or face left
+//   eyes      "open", "happy" ◠, "closed" ◡, "sleepy", "wink" or "puppy"
+//   mouth     "smile", "tongue" or "o"
+//   over      peek only: what she peeks over, "heart", "sign" (blank, for a message) or "gift"
+//   holding   in her mouth, side-on poses: "heart" or "letter"
+//   night     a white outline, for black backgrounds
+//   halo      follows the page's checkbox unless given
+// Each pose has its own eyes and mouth unless they're given.
+//
+// She's drawn on two layers, as parts in front of each other: the tones (her coat is brown, with a darker
+// crown, ears and stripe down her back, a grey muzzle and eyebrows) become even dot patterns (a 4 × 4
+// Bayer matrix), and her lines, eyes and nose go over them in pure black and white. Each pose draws in its
+// own coordinates from the point (x, y) puts on the frame, y getting more negative going up.
+// ---------------------------------------------------------------------------------------------------------
+
+const LULI_LINE = 6;
+// Her tones, 0 black … 1 white.
+const COAT = 0.52;
+const HEAD = 0.56;
+const DARK = 0.4; // her crown, ears, the stripe down her back, and the legs further away
+const MUZZLE = 0.86; // her grey muzzle and eyebrows
+const PAW = 0.64;
+const TONGUE = 0.92;
+const SIDES = [-1, 1];
+
+function pathOf(build) {
+	const path = new Path2D();
+	build(path);
+	return path;
+}
+
+function ellipsePath(x, y, rx, ry, rotation = 0) {
+	return pathOf((path) => path.ellipse(x, y, rx, ry, rotation, 0, Math.PI * 2));
+}
+
+function rectPath(x, y, width, height, radius = 0) {
+	return pathOf((path) => path.roundRect(x, y, width, height, radius));
+}
+
+function heartPath(x, y, width) {
+	const s = width / 2;
+	return pathOf((path) => {
+		path.moveTo(x, y + s * 0.85);
+		path.bezierCurveTo(x - s * 0.55, y + s * 0.4, x - s * 1.05, y + s * 0.05, x - s, y - s * 0.35);
+		path.bezierCurveTo(x - s * 0.95, y - s * 0.95, x - s * 0.2, y - s * 1.05, x, y - s * 0.45);
+		path.bezierCurveTo(x + s * 0.2, y - s * 1.05, x + s * 0.95, y - s * 0.95, x + s, y - s * 0.35);
+		path.bezierCurveTo(x + s * 1.05, y + s * 0.05, x + s * 0.55, y + s * 0.4, x, y + s * 0.85);
+		path.closePath();
+	});
+}
+
+function grayOf(tone) {
+	const value = Math.round(tone * 255);
+	return `rgb(${value} ${value} ${value})`;
+}
+
+/**
+ * What Luli and the decorations draw with, on both layers: parts in front of each other, lines and solid
+ * shapes. Outlines are `lineWidth` wide, in `lineColor`.
+ */
+function luliKit(tones, ink, lineColor, lineWidth = LULI_LINE) {
+	const both = (draw) => {
+		draw(tones);
+		draw(ink);
+	};
+	const kit = {
+		lineColor,
+		lineWidth,
+		/**
+		 * A part filled with a tone, in front of what's drawn so far (it covers the lines behind it), and
+		 * outlined: `line` is true, false, or a y to outline it only below that.
+		 */
+		part(path, tone, line = true, color = lineColor) {
+			tones.fillStyle = grayOf(tone);
+			tones.fill(path);
+			ink.globalCompositeOperation = "destination-out";
+			ink.fill(path);
+			ink.globalCompositeOperation = "source-over";
+			if (line === true) {
+				kit.stroke(path, lineWidth, color);
+			} else if (line !== false) {
+				kit.below(line, () => kit.stroke(path, lineWidth, color));
+			}
+		},
+		/**
+		 * A limb (or several as one shape: see limbPath), like a part: in front of what's drawn so far, its
+		 * outline just outside it (`line` true, false, or a y to outline it only below that).
+		 */
+		limb(limbs, tone, line = true, color = lineColor) {
+			const shape = limbPath(limbs);
+			tones.fillStyle = grayOf(tone);
+			tones.fill(shape);
+			const outline = () => {
+				ink.fillStyle = color;
+				ink.fill(limbPath(limbs, lineWidth * 0.8));
+			};
+			if (line === true) {
+				outline();
+			} else if (line !== false) {
+				kit.below(line, outline);
+			}
+			ink.globalCompositeOperation = "destination-out";
+			ink.fill(shape);
+			ink.globalCompositeOperation = "source-over";
+		},
+		stroke(path, width = lineWidth, color = lineColor) {
+			ink.lineWidth = width;
+			ink.strokeStyle = color;
+			ink.stroke(path);
+		},
+		dashed(path, width = lineWidth, dash = [14, 10], color = lineColor) {
+			ink.setLineDash(dash);
+			kit.stroke(path, width, color);
+			ink.setLineDash([]);
+		},
+		solid(path, color = BLACK) {
+			ink.fillStyle = color;
+			ink.fill(path);
+		},
+		/** Draws with `draw` moved to (x, y), turned `angle` radians clockwise, and mirrored if `flip`. */
+		at(x, y, angle, draw, flip = false) {
+			both((g) => {
+				g.save();
+				g.translate(x, y);
+				g.rotate(angle);
+				if (flip) g.scale(-1, 1);
+			});
+			draw();
+			both((g) => g.restore());
+		},
+		/** Draws with `draw` turned `angle` radians clockwise around (x, y). */
+		around(x, y, angle, draw) {
+			kit.at(x, y, angle, () => kit.at(-x, -y, 0, draw));
+		},
+		/** Draws with `draw` only inside `area`. */
+		inside(area, draw) {
+			both((g) => {
+				g.save();
+				g.clip(area);
+			});
+			draw();
+			both((g) => g.restore());
+		},
+		above(y, draw) {
+			kit.inside(rectPath(-4000, y - 8000, 8000, 8000), draw);
+		},
+		below(y, draw) {
+			kit.inside(rectPath(-4000, y, 8000, 8000), draw);
+		},
+		rightOf(x, draw) {
+			kit.inside(rectPath(x, -4000, 8000, 8000), draw);
+		},
+	};
+	return kit;
+}
+
+/** Adds a circle to a path as a shape of its own. */
+function addCircle(path, x, y, r) {
+	path.moveTo(x + r, y);
+	path.arc(x, y, r, 0, Math.PI * 2);
+}
+
+/** An eye at (x, y): "open", "puppy" (bigger and shinier), "happy" ◠, "closed" ◡ or "sleepy" (half shut). */
+function drawEye(kit, x, y, kind, size = 1) {
+	if (kind === "open" || kind === "puppy") {
+		const s = kind === "puppy" ? size * 1.2 : size;
+		kit.solid(ellipsePath(x, y, 15 * s, 18 * s));
+		kit.solid(pathOf((path) => {
+			addCircle(path, x + 5 * s, y - 8 * s, (kind === "puppy" ? 6.5 : 5.5) * s);
+			addCircle(path, x - 5 * s, y + 8 * s, 2.5 * s);
+		}), WHITE);
+	} else if (kind === "sleepy") {
+		kit.below(y - 2 * size, () => kit.solid(ellipsePath(x, y, 15 * size, 18 * size)));
+		kit.stroke(pathOf((path) => {
+			path.moveTo(x - 17 * size, y - 2 * size);
+			path.lineTo(x + 17 * size, y - 2 * size);
+		}), 5 * size, BLACK);
+	} else {
+		const bend = kind === "happy" ? -1 : 1;
+		kit.stroke(pathOf((path) => {
+			path.moveTo(x - 14 * size, y - 4 * size * bend);
+			path.quadraticCurveTo(x, y + 16 * size * bend, x + 14 * size, y - 4 * size * bend);
+		}), 5 * size, BLACK);
+	}
+}
+
+// Her head from the front, its middle at the origin.
+const FRONT = (() => {
+	/** An ear hanging from the top of the head; `side` is −1 for the one on the left. */
+	const ear = (side) => pathOf((path) => {
+		const at = (x, y) => [-x * side, y];
+		path.moveTo(...at(-52, -81));
+		path.bezierCurveTo(...at(-95, -95), ...at(-128, -60), ...at(-128, -5));
+		path.bezierCurveTo(...at(-128, 55), ...at(-126, 110), ...at(-100, 127));
+		path.bezierCurveTo(...at(-84, 135), ...at(-76, 105), ...at(-78, 65));
+		path.bezierCurveTo(...at(-80, 15), ...at(-82, -45), ...at(-52, -81));
+		path.closePath();
+	});
+	// Ears flopped the other way, over the top of her head, when she hangs upside down.
+	const flop = new DOMMatrix().translate(0, -75).scale(1, -0.7).translate(0, 75);
+	return {
+		head: ellipsePath(0, 0, 105, 92),
+		ears: SIDES.map((side) => ({ side, down: ear(side), up: pathOf((path) => path.addPath(ear(side), flop)), attach: [52 * side, -81] })),
+		// The darker stripe on top of her head (it ran down her back too).
+		crown: ellipsePath(0, -73, 52, 26),
+		muzzle: pathOf((path) => {
+			path.moveTo(-44, 10);
+			path.quadraticCurveTo(0, -30, 44, 10);
+			path.bezierCurveTo(58, 50, 50, 105, 34, 135);
+			path.quadraticCurveTo(0, 165, -34, 135);
+			path.bezierCurveTo(-50, 105, -58, 50, -44, 10);
+			path.closePath();
+		}),
+		brows: SIDES.map((side) => ellipsePath(50 * side, -49, 13, 8)),
+		nose: pathOf((path) => {
+			path.moveTo(-30, 93);
+			path.quadraticCurveTo(0, 85, 30, 93);
+			path.bezierCurveTo(46, 99, 40, 123, 18, 128);
+			path.quadraticCurveTo(0, 132, -18, 128);
+			path.bezierCurveTo(-40, 123, -46, 99, -30, 93);
+			path.closePath();
+		}),
+		noseShine: ellipsePath(-11, 100, 9, 4),
+		tongue: pathOf((path) => {
+			path.moveTo(-11, 145);
+			path.lineTo(11, 145);
+			path.bezierCurveTo(13, 167, -13, 167, -11, 145);
+			path.closePath();
+		}),
+	};
+})();
+
+/** Her head from the front. `ears`: "down", "splayed" (lying flat out to the sides) or "up". */
+function drawFrontHead(kit, { eyes = "open", mouth = "smile", ears = "down", halo = true, haloAt = [0, -127, 80] }) {
+	if (ears === "up") {
+		for (const ear of FRONT.ears) kit.part(ear.up, DARK);
+	}
+	kit.part(FRONT.head, HEAD);
+	kit.inside(FRONT.head, () => kit.part(FRONT.crown, DARK, false));
+	if (ears !== "up") {
+		for (const ear of FRONT.ears) {
+			kit.around(...ear.attach, ears === "splayed" ? -ear.side * 0.28 : 0, () => kit.part(ear.down, DARK));
+		}
+	}
+	kit.part(FRONT.muzzle, MUZZLE, 70);
+	for (const brow of FRONT.brows) kit.part(brow, MUZZLE, false);
+	for (const side of SIDES) {
+		drawEye(kit, 52 * side, -10, eyes === "wink" ? (side < 0 ? "open" : "happy") : eyes);
+	}
+	kit.solid(FRONT.nose);
+	kit.solid(FRONT.noseShine, WHITE);
+	if (mouth === "tongue") kit.part(FRONT.tongue, TONGUE, true, BLACK);
+	kit.stroke(pathOf((path) => {
+		path.moveTo(0, 129);
+		path.lineTo(0, mouth === "o" ? 135 : 141);
+		if (mouth !== "o") {
+			path.moveTo(-20, 145);
+			path.quadraticCurveTo(-8, 149, 0, 141);
+			path.quadraticCurveTo(8, 149, 20, 145);
+		}
+		if (mouth === "tongue") {
+			path.moveTo(0, 147);
+			path.lineTo(0, 154);
+		}
+	}), 3.6, BLACK);
+	if (mouth === "o") kit.solid(ellipsePath(0, 146, 8, 10));
+	if (halo) {
+		const [x, y, rx] = haloAt;
+		kit.stroke(ellipsePath(x, y, rx, rx * 0.21), LULI_LINE * 1.5);
+	}
+}
+
+// A front paw, its top in the middle at the origin, hanging down (over an edge).
+const FRONT_PAW = rectPath(-34, 0, 68, 56, 24);
+const FRONT_TOES = pathOf((path) => {
+	for (const x of [-17, 0, 17]) {
+		path.moveTo(x, 22);
+		path.lineTo(x, 36);
+	}
+});
+
+function drawFrontPaw(kit, x, y, angle = 0) {
+	kit.at(x, y, angle, () => {
+		kit.part(FRONT_PAW, PAW);
+		kit.stroke(FRONT_TOES, 3, BLACK);
+	});
+}
+
+// The neck, coming up from below an edge, under her head at (0, −185).
+const NECK = pathOf((path) => {
+	path.moveTo(-72, -130);
+	path.bezierCurveTo(-80, -60, -90, -20, -96, 20);
+	path.lineTo(96, 20);
+	path.bezierCurveTo(90, -20, 80, -60, 72, -130);
+	path.closePath();
+});
+
+// The neck going off to the left, under her head at (70, 0).
+const SIDE_NECK = pathOf((path) => {
+	path.moveTo(40, -20);
+	path.bezierCurveTo(0, -30, -40, -30, -80, -30);
+	path.lineTo(-80, 150);
+	path.bezierCurveTo(-30, 150, 30, 130, 80, 100);
+	path.closePath();
+});
+
+/** What she peeks over, its top edge along y = 0 under her paws. */
+function drawProp(kit, kind) {
+	if (kind === "heart") {
+		kit.part(heartPath(0, 100, 400), 0.3);
+	} else if (kind === "sign") {
+		kit.part(rectPath(-220, -24, 440, 210, 16), 1);
+		for (const side of SIDES) kit.solid(pathOf((path) => addCircle(path, 196 * side, 0, 6)));
+	} else if (kind === "gift") {
+		const box = rectPath(-170, -20, 340, 200, 10);
+		kit.part(box, MUZZLE);
+		kit.part(rectPath(-24, -20, 48, 200), DARK);
+		kit.part(rectPath(-170, 50, 340, 44), DARK);
+		kit.stroke(box);
+	}
+}
+
+// Side-on, she's made of limbs: smooth tubes along curves through joints, each joint with its own
+// thickness ([x, y, radius]), so her outline is one flowing line, like a drawing. A pose is just where her
+// joints are (SIDE_RIGS), facing right, on the ground at y = 0.
+
+function catmullRom(a, b, c, d, t) {
+	return 0.5 * (2 * b + (c - a) * t + (2 * a - 5 * b + 4 * c - d) * t * t + (3 * b - a - 3 * c + d) * t * t * t);
+}
+
+/** Points [x, y, radius] along a smooth curve through the joints, about every 2 px. */
+function alongJoints(joints) {
+	const points = [];
+	for (let i = 0; i < joints.length - 1; i++) {
+		const [a, b, c, d] = [joints[Math.max(i - 1, 0)], joints[i], joints[i + 1], joints[Math.min(i + 2, joints.length - 1)]];
+		const steps = Math.max(1, Math.ceil(Math.hypot(c[0] - b[0], c[1] - b[1]) / 2));
+		for (let step = 0; step < steps; step++) {
+			points.push([0, 1, 2].map((k) => catmullRom(a[k], b[k], c[k], d[k], step / steps)));
+		}
+	}
+	points.push(joints.at(-1));
+	return points;
+}
+
+/** The shape of one limb (a list of joints), or of several as one, `grow` px fatter all round. */
+function limbPath(limbs, grow = 0) {
+	const all = typeof limbs[0][0] === "number" ? [limbs] : limbs;
+	return pathOf((path) => {
+		for (const joints of all) {
+			for (const [x, y, r] of alongJoints(joints)) addCircle(path, x, y, Math.max(0.5, r + grow));
+		}
+	});
+}
+
+// Her head side-on, facing right, the middle of her skull at the origin. Drawn like a cartoon dachshund's:
+// a domed skull that dips at the stop into a long, straight muzzle; a nose capping the tip; her mouth a line
+// along the muzzle, curling up at the corner; the eye just behind the stop, under her light eyebrow; and a
+// long ear with a fold, hanging from the back of her head.
+const SIDE_HEAD = {
+	head: pathOf((path) => {
+		path.moveTo(-34, 30);
+		path.bezierCurveTo(-50, 2, -38, -40, -2, -43);
+		path.bezierCurveTo(22, -45, 36, -34, 42, -21);
+		// The stop: the forehead dips into the top of the muzzle.
+		path.quadraticCurveTo(48, -10, 62, -8);
+		path.lineTo(100, -1);
+		path.bezierCurveTo(112, 1, 117, 14, 110, 20);
+		// Her chin, just behind the nose, and the jaw back to her throat.
+		path.bezierCurveTo(106, 28, 96, 32, 86, 33);
+		path.bezierCurveTo(60, 38, 30, 40, 8, 42);
+		path.bezierCurveTo(-12, 44, -28, 40, -34, 30);
+		path.closePath();
+	}),
+	// Her grey muzzle, from the stop down behind the corner of her mouth.
+	muzzle: pathOf((path) => {
+		path.moveTo(44, -40);
+		path.bezierCurveTo(36, -8, 36, 16, 48, 50);
+		path.lineTo(140, 50);
+		path.lineTo(140, -40);
+		path.closePath();
+	}),
+	crown: ellipsePath(-6, -32, 30, 12),
+	ear: pathOf((path) => {
+		path.moveTo(-4, -38);
+		path.bezierCurveTo(-30, -45, -47, -20, -47, 10);
+		path.bezierCurveTo(-47, 46, -36, 68, -16, 68);
+		path.bezierCurveTo(4, 68, 10, 46, 8, 20);
+		path.bezierCurveTo(6, -6, 10, -24, -4, -38);
+		path.closePath();
+	}),
+	earFold: pathOf((path) => {
+		path.moveTo(0, -30);
+		path.quadraticCurveTo(-14, -8, -9, 30);
+	}),
+	brow: ellipsePath(24, -32, 9, 5),
+	nose: pathOf((path) => {
+		path.moveTo(97, -3);
+		path.bezierCurveTo(110, -3, 118, 10, 112, 19);
+		path.bezierCurveTo(108, 24, 99, 23, 95, 18);
+		path.bezierCurveTo(90, 11, 90, 1, 97, -3);
+		path.closePath();
+	}),
+	noseShine: ellipsePath(104, 3, 5, 2.5),
+	// From under her nose back along the muzzle, curling up into her cheek: a smile.
+	mouth: pathOf((path) => {
+		path.moveTo(100, 21);
+		path.quadraticCurveTo(84, 26, 69, 25);
+		path.quadraticCurveTo(59, 24, 57, 17);
+	}),
+	tongue: pathOf((path) => {
+		path.moveTo(64, 25);
+		path.lineTo(80, 24);
+		path.bezierCurveTo(84, 56, 60, 56, 64, 25);
+		path.closePath();
+	}),
+	halo: ellipsePath(4, -74, 46, 10),
+};
+
+function drawSideHead(kit, { eyes = "open", mouth = "smile", holding = null, halo = true }) {
+	kit.part(SIDE_HEAD.head, HEAD);
+	kit.inside(SIDE_HEAD.head, () => {
+		kit.part(SIDE_HEAD.muzzle, MUZZLE, false);
+		kit.part(SIDE_HEAD.crown, DARK, false);
+	});
+	kit.part(SIDE_HEAD.brow, MUZZLE, false);
+	drawEye(kit, 27, -13, eyes === "wink" ? "happy" : eyes, 0.7);
+	kit.solid(SIDE_HEAD.nose);
+	kit.solid(SIDE_HEAD.noseShine, WHITE);
+	if (mouth === "tongue") kit.part(SIDE_HEAD.tongue, TONGUE, true, BLACK);
+	if (mouth === "o") {
+		kit.solid(ellipsePath(84, 27, 8, 6));
+	} else {
+		kit.stroke(SIDE_HEAD.mouth, 3.6, BLACK);
+	}
+	kit.part(SIDE_HEAD.ear, DARK);
+	kit.stroke(SIDE_HEAD.earFold, 3, BLACK);
+	if (holding === "heart") {
+		kit.part(heartPath(76, 48, 56), 0.3);
+	} else if (holding === "letter") {
+		kit.at(80, 44, 0.12, () => {
+			kit.part(rectPath(-36, -22, 72, 46, 4), 1);
+			kit.stroke(pathOf((path) => {
+				path.moveTo(-36, -22);
+				path.lineTo(0, 4);
+				path.lineTo(36, -22);
+			}), 3, BLACK);
+		});
+	}
+	if (halo) kit.stroke(SIDE_HEAD.halo, LULI_LINE * 1.5);
+}
+
+// Her body standing: a long back, a deep chest that hangs low between her front legs, the belly rising to
+// a round rump. The second limb is her neck.
+const STANDING_BODY = [
+	[[-160, -96, 40], [-110, -102, 40], [-40, -102, 44], [30, -100, 52], [92, -92, 54], [122, -98, 40]],
+	[[110, -122, 36], [148, -160, 32], [172, -186, 30]],
+];
+// The darker stripe down her back and neck.
+const STANDING_STRIPE = [[-180, -128, 9], [-90, -138, 12], [20, -148, 14], [100, -146, 12], [124, -178, 10], [150, -205, 8]];
+
+/**
+ * Where her joints are in each side-on pose: `tail`, the legs `far` from us (darker), her `body` and
+ * neck, the `stripe` on her back, the legs `near` us, limbs drawn in `front` of all that, her `head`
+ * ([x, y, angle]), the pose's own `look`, and the `middle` of her from nose to tail, if it isn't x = 0.
+ */
+const SIDE_RIGS = {
+	standing: {
+		tail: [[-178, -112, 11], [-212, -130, 8], [-236, -158, 5], [-246, -186, 2.5]],
+		far: [
+			[[-110, -78, 26], [-102, -46, 14], [-120, -20, 10], [-106, -8, 9], [-92, -7, 8]],
+			[[72, -60, 16], [78, -34, 12], [80, -14, 10], [92, -8, 9], [106, -7, 8]],
+		],
+		body: STANDING_BODY,
+		stripe: STANDING_STRIPE,
+		near: [
+			[[-138, -86, 34], [-128, -50, 17], [-148, -22, 11], [-136, -8, 10], [-118, -7, 9]],
+			[[100, -66, 18], [104, -38, 14], [106, -16, 11], [118, -8, 10], [134, -7, 9]],
+		],
+		head: [186, -205, 0],
+		look: { mouth: "tongue" },
+	},
+	trotting: {
+		tail: [[-178, -112, 11], [-206, -140, 8], [-218, -172, 5], [-214, -200, 2.5]],
+		far: [
+			[[-110, -78, 26], [-96, -46, 14], [-100, -18, 10], [-88, -8, 9], [-74, -7, 8]],
+			[[72, -60, 16], [66, -34, 12], [58, -14, 10], [68, -7, 9], [82, -6, 8]],
+		],
+		body: STANDING_BODY,
+		stripe: STANDING_STRIPE,
+		near: [
+			[[-138, -86, 34], [-136, -50, 17], [-166, -26, 11], [-158, -9, 10], [-142, -8, 9]],
+			[[100, -66, 18], [112, -40, 14], [126, -18, 11], [140, -9, 10], [156, -8, 9]],
+		],
+		head: [186, -205, -0.1],
+		look: { eyes: "happy", holding: "heart" },
+	},
+	sausage: {
+		tail: [[-262, -58, 10], [-300, -48, 7], [-330, -40, 4], [-344, -37, 2]],
+		far: [
+			[[-215, -38, 24], [-250, -20, 13], [-282, -11, 9], [-300, -8, 8]],
+			[[82, -30, 14], [118, -15, 11], [150, -9, 9], [168, -8, 8]],
+		],
+		body: [
+			[[-250, -50, 38], [-190, -54, 42], [-100, -56, 44], [0, -56, 46], [72, -50, 46], [106, -54, 36]],
+			[[100, -68, 32], [134, -80, 28], [158, -84, 27]],
+		],
+		stripe: [[-270, -80, 8], [-180, -94, 11], [-60, -100, 12], [40, -100, 12], [90, -96, 10], [128, -104, 8], [158, -110, 7]],
+		near: [
+			[[-228, -46, 30], [-262, -24, 15], [-296, -13, 10], [-318, -9, 9], [-330, -8, 8]],
+			[[94, -32, 16], [128, -16, 12], [166, -10, 10], [196, -9, 9], [210, -8, 8]],
+		],
+		head: [176, -76, 0.12],
+		look: { eyes: "happy" },
+		// From the tip of her tail to her nose, her middle is left of the origin.
+		middle: -25,
+	},
+	sitting: {
+		tail: [[-112, -14, 10], [-146, -10, 7], [-176, -8, 4], [-190, -7, 2]],
+		far: [
+			[[-38, -16, 12], [-10, -9, 10], [6, -8, 8]],
+			[[36, -90, 16], [40, -56, 12], [42, -26, 11], [44, -12, 10], [56, -7, 9], [70, -6, 8]],
+		],
+		// Her back slants up from her rump on the ground to her chest, held up on straight front legs.
+		body: [
+			[[-70, -44, 44], [-30, -80, 46], [12, -112, 48], [50, -136, 48], [72, -146, 40]],
+			[[72, -150, 34], [86, -175, 32], [100, -200, 30]],
+		],
+		stripe: [[-95, -80, 8], [-57, -117, 11], [-16, -151, 12], [22, -175, 12], [50, -182, 10], [62, -196, 9], [78, -214, 7]],
+		near: [
+			[[-60, -54, 40], [-44, -28, 24], [-20, -12, 13], [6, -9, 11], [24, -8, 9]],
+			[[60, -96, 18], [64, -60, 15], [66, -30, 12], [68, -14, 11], [80, -8, 10], [96, -7, 9]],
+		],
+		head: [114, -220, -0.3],
+		look: {},
+	},
+	asleep: {
+		far: [[[82, -30, 12], [116, -15, 10], [146, -9, 8], [160, -8, 7]]],
+		body: [
+			[[-150, -44, 40], [-100, -66, 46], [-30, -78, 50], [40, -70, 48], [92, -50, 40]],
+			[[92, -58, 32], [122, -56, 28]],
+		],
+		stripe: [[-182, -60, 8], [-120, -104, 11], [-40, -124, 12], [40, -114, 11], [96, -84, 9], [126, -82, 7]],
+		near: [
+			[[-118, -54, 36], [-98, -30, 22], [-70, -14, 13], [-44, -9, 10], [-28, -8, 9]],
+			[[90, -34, 14], [126, -17, 11], [158, -10, 9], [174, -8, 8]],
+		],
+		// Her tail, curled round in front of her.
+		front: [[[-186, -30, 10], [-176, -10, 8], [-120, -6, 6], [-40, -5, 5], [40, -6, 4], [70, -8, 3]]],
+		head: [150, -52, 0.15],
+		look: { eyes: "closed" },
+	},
+};
+
+/** Her body side-on, from a rig (SIDE_RIGS). */
+function drawSideBody(kit, rig, look) {
+	if (rig.tail) kit.limb(rig.tail, COAT);
+	for (const leg of rig.far) kit.limb(leg, DARK);
+	kit.limb(rig.body, COAT);
+	kit.inside(limbPath(rig.body), () => kit.limb(rig.stripe, DARK, false));
+	// A near leg's outline starts halfway down its top joint, so it reads as the curve of a thigh or a
+	// shoulder on her side, not as a circle stuck on.
+	for (const leg of rig.near) kit.limb(leg, COAT, leg[0][1]);
+	for (const limb of rig.front ?? []) kit.limb(limb, COAT);
+	const [x, y, angle] = rig.head;
+	kit.at(x, y, angle, () => drawSideHead(kit, { ...rig.look, ...look }));
+}
+
+/** A side-on pose, on the ground under her middle. */
+function sidePose(name) {
+	const rig = SIDE_RIGS[name];
+	return { anchor: [W / 2, H], draw: (kit, look) => kit.at(-(rig.middle ?? 0), 0, 0, () => drawSideBody(kit, rig, look)) };
+}
+
+const LULI_POSES = {
+	peek: {
+		anchor: [W / 2, H],
+		draw(kit, look) {
+			kit.above(0, () => {
+				kit.part(NECK, COAT);
+				kit.at(0, -185, 0, () => drawFrontHead(kit, { mouth: "tongue", ...look }));
+			});
+			if (look.over) drawProp(kit, look.over);
+			for (const side of SIDES) drawFrontPaw(kit, 116 * side, -36);
+		},
+	},
+	headTop: {
+		anchor: [W / 2, H],
+		draw(kit, look) {
+			kit.above(0, () => kit.at(0, -62, 0, () => drawFrontHead(kit, look)));
+		},
+	},
+	chin: {
+		anchor: [W / 2, H],
+		draw(kit, look) {
+			kit.above(0, () => kit.at(0, -150, 0, () => drawFrontHead(kit, { eyes: "puppy", ears: "splayed", ...look })));
+			for (const side of SIDES) drawFrontPaw(kit, 92 * side, -30);
+		},
+	},
+	upsideDown: {
+		anchor: [W / 2, 0],
+		draw(kit, look) {
+			kit.at(0, 0, Math.PI, () => {
+				kit.above(0, () => {
+					kit.part(NECK, COAT);
+					kit.at(0, -185, 0, () => drawFrontHead(kit, { eyes: "happy", mouth: "o", ears: "up", haloAt: [0, -150, 56], ...look }));
+				});
+				for (const side of SIDES) drawFrontPaw(kit, 116 * side, -36);
+			});
+		},
+	},
+	side: {
+		anchor: [0, H / 2],
+		draw(kit, look) {
+			kit.rightOf(0, () => {
+				kit.part(SIDE_NECK, COAT);
+				kit.at(70, 0, -0.3, () => drawFrontHead(kit, look));
+			});
+			drawFrontPaw(kit, -20, 175, -Math.PI / 2);
+		},
+	},
+	standing: sidePose("standing"),
+	sausage: sidePose("sausage"),
+	sitting: sidePose("sitting"),
+	asleep: sidePose("asleep"),
+	trotting: sidePose("trotting"),
+};
+
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+
+/**
+ * A layer made pure black and white where it's drawn (at least half opaque), see-through elsewhere: by a
+ * 4 × 4 Bayer matrix (even dot patterns), or at 50 %.
+ */
+function oneBitLayer(canvas, method) {
+	const { width, height } = canvas;
+	const image = canvas.getContext("2d").getImageData(0, 0, width, height);
+	const data = image.data;
+	for (let y = 0; y < height; y++) {
+		for (let x = 0; x < width; x++) {
+			const i = (y * width + x) * 4;
+			if (data[i + 3] < 128) {
+				data[i + 3] = 0;
+				continue;
+			}
+			const tone = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114) / 255;
+			const white = method === "bayer" ? tone > (BAYER[(y % 4) * 4 + (x % 4)] + 0.5) / 16 : tone >= 0.5;
+			data[i] = data[i + 1] = data[i + 2] = white ? 255 : 0;
+			data[i + 3] = 255;
+		}
+	}
+	const result = document.createElement("canvas");
+	result.width = width;
+	result.height = height;
+	result.getContext("2d").putImageData(image, 0, 0);
+	return result;
+}
+
+/** Luli in a pose (see above), on a frame-sized canvas that's see-through around her. */
+function drawLuli(pose, { x, y, scale = 1, flip = false, night = false, ...look }) {
+	const { anchor, draw } = LULI_POSES[pose];
+	// Options left out keep the pose's own.
+	const given = Object.fromEntries(Object.entries(look).filter(([, value]) => value !== undefined));
+	return renderKit((kit) => draw(kit, given), { x: x ?? anchor[0], y: y ?? anchor[1], scale, flip, night });
+}
+
+/**
+ * What `draw` draws with a kit (see luliKit), its origin at (x, y), as a frame-sized canvas that's
+ * see-through around the drawing: the tones in dots, the lines over them.
+ */
+function renderKit(draw, { x = 0, y = 0, scale = 1, flip = false, night = false, lineWidth = LULI_LINE } = {}) {
+	const layer = () => {
+		const canvas = document.createElement("canvas");
+		canvas.width = W;
+		canvas.height = H;
+		const g = canvas.getContext("2d", { willReadFrequently: true });
+		g.setTransform(flip ? -scale : scale, 0, 0, scale, x, y);
+		g.lineJoin = "round";
+		g.lineCap = "round";
+		return g;
+	};
+	const tones = layer();
+	const ink = layer();
+	draw(luliKit(tones, ink, night ? WHITE : BLACK, lineWidth));
+	const result = document.createElement("canvas");
+	result.width = W;
+	result.height = H;
+	const g = result.getContext("2d");
+	g.drawImage(oneBitLayer(tones.canvas, "bayer"), 0, 0);
+	g.drawImage(oneBitLayer(ink.canvas, "threshold"), 0, 0);
+	return result;
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Decorations, in Luli's style (outlines, tones in dots): flowers, leaves, the ✨ twinkles, and spaces for
+// photos. Each draws with a kit in frame coordinates; frames use them through p.decor((kit) => …), or
+// p.photo(…) for a photo space with its label.
+// ---------------------------------------------------------------------------------------------------------
+
+function circlePath(x, y, r) {
+	return ellipsePath(x, y, r, r);
+}
+
+/** A four-pointed star; `fat` is how full its sides are (0: thin spikes). */
+function starPath(x, y, r, fat = 0.32) {
+	const k = r * fat;
+	return pathOf((path) => {
+		path.moveTo(x, y - r);
+		path.quadraticCurveTo(x + k, y - k, x + r, y);
+		path.quadraticCurveTo(x + k, y + k, x, y + r);
+		path.quadraticCurveTo(x - k, y + k, x - r, y);
+		path.quadraticCurveTo(x - k, y - k, x, y - r);
+		path.closePath();
+	});
+}
+
+/** The ✨: a big twinkle, outlined, with two small solid ones up and down to its left. */
+function drawTwinkles(kit, x, y, size) {
+	kit.part(starPath(x, y, size), 1);
+	kit.solid(starPath(x - size * 1.05, y - size * 0.8, size * 0.42), kit.lineColor);
+	kit.solid(starPath(x - size * 0.8, y + size * 0.85, size * 0.3), kit.lineColor);
+}
+
+/** A leaf from (x, y), `length` long, pointing `angle` radians clockwise from the right. */
+function drawLeaf(kit, x, y, length, angle, tone = 0.5) {
+	kit.at(x, y, angle, () => {
+		kit.part(pathOf((path) => {
+			path.moveTo(0, 0);
+			path.quadraticCurveTo(length * 0.5, -length * 0.36, length, 0);
+			path.quadraticCurveTo(length * 0.5, length * 0.36, 0, 0);
+			path.closePath();
+		}), tone);
+		kit.stroke(pathOf((path) => {
+			path.moveTo(length * 0.12, 0);
+			path.lineTo(length * 0.72, 0);
+		}), kit.lineWidth * 0.6);
+	});
+}
+
+function drawStem(kit, x1, y1, x2, y2, bend = 0) {
+	kit.stroke(pathOf((path) => {
+		path.moveTo(x1, y1);
+		path.quadraticCurveTo((x1 + x2) / 2 + bend, (y1 + y2) / 2, x2, y2);
+	}));
+}
+
+function drawDaisy(kit, x, y, r, angle = 0) {
+	const petals = 11;
+	for (let i = 0; i < petals; i++) {
+		const a = angle + (i / petals) * Math.PI * 2;
+		kit.part(ellipsePath(x + Math.cos(a) * r * 0.56, y + Math.sin(a) * r * 0.56, r * 0.46, r * 0.19, a), 1);
+	}
+	kit.part(circlePath(x, y, r * 0.3), 0.32);
+}
+
+function drawBlossom(kit, x, y, r, angle = 0) {
+	for (let i = 0; i < 5; i++) {
+		const a = angle - Math.PI / 2 + (i / 5) * Math.PI * 2;
+		kit.part(circlePath(x + Math.cos(a) * r * 0.52, y + Math.sin(a) * r * 0.52, r * 0.5), 0.72);
+	}
+	kit.part(circlePath(x, y, r * 0.26), 1);
+}
+
+function drawRose(kit, x, y, r, angle = 0) {
+	kit.part(circlePath(x, y, r), 0.6);
+	kit.at(x, y, angle, () => {
+		kit.stroke(pathOf((path) => {
+			// The bud in the middle, curled.
+			path.moveTo(-r * 0.22, -r * 0.05);
+			path.quadraticCurveTo(-r * 0.2, -r * 0.34, r * 0.08, -r * 0.3);
+			path.quadraticCurveTo(r * 0.34, -r * 0.22, r * 0.26, r * 0.06);
+			path.quadraticCurveTo(r * 0.12, r * 0.26, -r * 0.12, r * 0.12);
+			// The petals around it.
+			path.moveTo(-r * 0.64, -r * 0.18);
+			path.quadraticCurveTo(-r * 0.56, r * 0.52, r * 0.12, r * 0.56);
+			path.moveTo(r * 0.64, -r * 0.3);
+			path.quadraticCurveTo(r * 0.66, r * 0.32, r * 0.26, r * 0.52);
+			path.moveTo(-r * 0.5, -r * 0.56);
+			path.quadraticCurveTo(-r * 0.04, -r * 0.82, r * 0.5, -r * 0.56);
+		}), kit.lineWidth * 0.8);
+	});
+}
+
+function drawTulip(kit, x, y, r, angle = 0) {
+	kit.at(x, y, angle, () => {
+		kit.part(pathOf((path) => {
+			path.moveTo(-r * 0.78, -r * 0.6);
+			path.quadraticCurveTo(-r * 0.95, r * 0.7, 0, r * 0.78);
+			path.quadraticCurveTo(r * 0.95, r * 0.7, r * 0.78, -r * 0.6);
+			path.lineTo(r * 0.4, -r * 0.2);
+			path.lineTo(0, -r * 0.7);
+			path.lineTo(-r * 0.4, -r * 0.2);
+			path.closePath();
+		}), 0.52);
+		kit.part(pathOf((path) => {
+			path.moveTo(-r * 0.42, -r * 0.1);
+			path.quadraticCurveTo(0, -r * 0.95, r * 0.42, -r * 0.1);
+			path.quadraticCurveTo(r * 0.45, r * 0.62, 0, r * 0.74);
+			path.quadraticCurveTo(-r * 0.45, r * 0.62, -r * 0.42, -r * 0.1);
+			path.closePath();
+		}), 0.72);
+	});
+}
+
+function drawBud(kit, x, y, r, angle = 0) {
+	kit.at(x, y, angle, () => {
+		kit.part(ellipsePath(0, 0, r * 0.7, r), 0.62);
+		kit.stroke(pathOf((path) => {
+			path.moveTo(-r * 0.7, r * 0.5);
+			path.lineTo(0, r * 1.1);
+			path.lineTo(r * 0.7, r * 0.5);
+		}), kit.lineWidth * 0.8);
+	});
+}
+
+const FLOWERS = { daisy: drawDaisy, blossom: drawBlossom, rose: drawRose, tulip: drawTulip, bud: drawBud };
+
+/** A flower ("daisy", "blossom", "rose", "tulip" or "bud") of radius r at (x, y). */
+function drawFlower(kit, kind, x, y, r, angle = 0) {
+	FLOWERS[kind](kit, x, y, r, angle);
+}
+
+/** A bunch of flowers and leaves in a corner of the frame: "top-left", "top-right", "bottom-left" or "bottom-right". */
+function drawCornerBunch(kit, corner, size = 1) {
+	const [x, y, angle, flip] = {
+		"top-left": [0, 0, 0, false],
+		"top-right": [W, 0, 0, true],
+		"bottom-left": [0, H, Math.PI, true],
+		"bottom-right": [W, H, Math.PI, false],
+	}[corner];
+	kit.at(x, y, angle, () => {
+		const s = size;
+		drawLeaf(kit, 8 * s, 30 * s, 110 * s, 0.3);
+		drawLeaf(kit, 30 * s, 8 * s, 110 * s, 1.25);
+		drawLeaf(kit, 20 * s, 20 * s, 150 * s, 0.78);
+		drawLeaf(kit, 120 * s, 40 * s, 70 * s, 0.1, 0.6);
+		drawRose(kit, 62 * s, 58 * s, 40 * s);
+		drawDaisy(kit, 142 * s, 34 * s, 34 * s, 0.2);
+		drawBlossom(kit, 40 * s, 132 * s, 30 * s, 0.3);
+		drawBud(kit, 186 * s, 82 * s, 11 * s, -0.9);
+		drawBud(kit, 98 * s, 116 * s, 10 * s, -0.6);
+	}, flip);
+}
+
+/** A vine from (x1, y1) to (x2, y2): a wavy stem with leaves on both sides and small flowers along it. */
+function drawVine(kit, x1, y1, x2, y2, { wave = 7, leafEvery = 44, flowerEvery = 150 } = {}) {
+	const length = Math.hypot(x2 - x1, y2 - y1);
+	const waveAt = (x) => Math.sin(x / 34) * wave;
+	kit.at(x1, y1, Math.atan2(y2 - y1, x2 - x1), () => {
+		kit.stroke(pathOf((path) => {
+			for (let x = 0; x <= length; x += 4) path.lineTo(x, waveAt(x));
+		}));
+		for (let i = 0, x = leafEvery / 2; x < length - 8; i++, x += leafEvery) {
+			const side = i % 2 ? 1 : -1;
+			drawLeaf(kit, x, waveAt(x), 26, side * 0.9 - 0.25);
+		}
+		const kinds = ["blossom", "bud", "daisy", "bud"];
+		for (let i = 0, x = flowerEvery / 2; x < length - 20; i++, x += flowerEvery) {
+			drawFlower(kit, kinds[i % kinds.length], x, waveAt(x), kinds[i % kinds.length] === "bud" ? 10 : 16, 0.3);
+		}
+	});
+}
+
+/** A point on a heart curve, about 32 wide and 29 tall, for t from 0 to 2π. */
+function heartPoint(t) {
+	return [16 * Math.sin(t) ** 3, -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t))];
+}
+
+/** A heart of leaves and flowers around (x, y): a stem along a heart curve, `scale` px per unit of the curve (about 370 px wide at 11.5). */
+function drawHeartWreath(kit, x, y, scale) {
+	const point = (t) => {
+		const [hx, hy] = heartPoint(t);
+		return [x + hx * scale, y + hy * scale];
+	};
+	kit.stroke(pathOf((path) => {
+		for (let i = 0; i <= 160; i++) path.lineTo(...point((i / 160) * Math.PI * 2));
+	}));
+	const count = 36;
+	const at = (i) => point((i / count) * Math.PI * 2);
+	for (let i = 0; i < count; i++) {
+		const [px, py] = at(i + 0.5);
+		const [nx, ny] = at(i + 1);
+		drawLeaf(kit, px, py, 28, Math.atan2(ny - py, nx - px) + (i % 2 ? 0.75 : -0.75));
+	}
+	// Flowers every third point, none at the dip on top (where the text goes).
+	const kinds = ["rose", "daisy", "blossom", "bud", "daisy", "rose", "blossom", "bud", "daisy", "blossom", "rose", "bud"];
+	for (let i = 1, k = 0; i < count; i += 3, k++) {
+		const [px, py] = at(i + 0.5);
+		const kind = kinds[k % kinds.length];
+		drawFlower(kit, kind, px, py, kind === "bud" ? 11 : kind === "rose" ? 20 : 22, i * 0.4);
+	}
+}
+
+/** A bouquet in a paper cone tied with a bow, the tip of the cone at (x, y). */
+function drawBouquet(kit, x, y, size = 1) {
+	kit.at(x, y, 0, () => {
+		const s = size;
+		const heads = [
+			["tulip", -88, -250, 30, -0.35], ["rose", -42, -292, 38, 0], ["daisy", 40, -310, 40, 0.2],
+			["tulip", 6, -360, 30, 0.08], ["blossom", 92, -250, 32, 0.4], ["bud", -110, -320, 12, -0.5], ["bud", 110, -322, 12, 0.5],
+		];
+		for (const [, hx, hy] of heads) drawStem(kit, 0, -150 * s, hx * s, hy * s, hx * 0.2 * s);
+		drawLeaf(kit, -20 * s, -200 * s, 90 * s, -2.5);
+		drawLeaf(kit, 20 * s, -200 * s, 90 * s, -0.6);
+		drawLeaf(kit, -10 * s, -230 * s, 70 * s, -1.9, 0.6);
+		for (const [kind, hx, hy, r, angle] of heads) drawFlower(kit, kind, hx * s, hy * s, r * s, angle);
+		kit.part(pathOf((path) => {
+			path.moveTo(-100 * s, -190 * s);
+			path.lineTo(100 * s, -190 * s);
+			path.lineTo(0, 0);
+			path.closePath();
+		}), 0.86);
+		kit.stroke(pathOf((path) => {
+			path.moveTo(-50 * s, -190 * s);
+			path.lineTo(-8 * s, -20 * s);
+			path.moveTo(40 * s, -190 * s);
+			path.lineTo(10 * s, -40 * s);
+		}), kit.lineWidth * 0.7);
+		// A bow tied round the top of the cone.
+		for (const side of SIDES) kit.at(side * 10 * s, -160 * s, side * -0.35, () => kit.part(rectPath(-6 * s, 0, 12 * s, 46 * s, 6 * s), 0.3));
+		for (const side of SIDES) kit.part(ellipsePath(side * 32 * s, -168 * s, 32 * s, 15 * s, side * 0.3), 0.3);
+		kit.part(circlePath(0, -166 * s, 12 * s), 0.3);
+	});
+}
+
+/** A space for a photo: lightly dotted, with a dashed border and a camera. The photo goes on top of it. */
+function drawPhotoSpot(kit, x, y, w, h) {
+	kit.part(rectPath(x, y, w, h), 0.88, false);
+	kit.dashed(rectPath(x + 4, y + 4, w - 8, h - 8), 3);
+	const cx = x + w / 2;
+	const cy = y + h / 2 - 22;
+	kit.part(rectPath(cx - 14, cy - 34, 28, 14, 3), 1);
+	kit.part(rectPath(cx - 38, cy - 26, 76, 52, 9), 1);
+	kit.part(circlePath(cx, cy, 16), 0.88);
+	kit.part(circlePath(cx, cy, 7), 1);
+}
+
+/** A polaroid around a photo space w × h at (x, y): a white card with a wide bottom, and its shadow. */
+function drawPolaroid(kit, x, y, w, h, bottom) {
+	const pad = 16;
+	kit.part(rectPath(x - pad + 10, y - pad + 12, w + pad * 2, h + pad + bottom), 0.45, false);
+	kit.part(rectPath(x - pad, y - pad, w + pad * 2, h + pad + bottom, 4), 1);
+	drawPhotoSpot(kit, x, y, w, h);
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// The painter: what the frames draw with. Everything is drawn smooth on the canvas, then made 1 bit.
+// ---------------------------------------------------------------------------------------------------------
+
+function painter(g, options) {
+	const tile = (rows) => {
+		const canvas = document.createElement("canvas");
+		canvas.width = rows[0].length;
+		canvas.height = rows.length;
+		const tileContext = canvas.getContext("2d");
+		tileContext.fillStyle = WHITE;
+		tileContext.fillRect(0, 0, canvas.width, canvas.height);
+		tileContext.fillStyle = BLACK;
+		rows.forEach((row, y) => [...row].forEach((bit, x) => bit === "1" && tileContext.fillRect(x, y, 1, 1)));
+		return g.createPattern(canvas, "repeat");
+	};
+	const dots = { half: tile(["10", "01"]), light: tile(["10", "00"]), dark: tile(["11", "10"]) };
+	// Luli was brown: half dots, with darker (black) ears.
+	const coat = { o: dots.half, e: BLACK };
+
+	const shape = (color, draw) => {
+		g.fillStyle = color;
+		g.beginPath();
+		draw();
+		g.fill();
+	};
+
+	const p = {
+		her: options.her.trim() || "meu amor",
+		dots,
+
+		fill(color) {
+			g.fillStyle = color;
+			g.fillRect(0, 0, W, H);
+		},
+		rect(x, y, width, height, color = BLACK) {
+			g.fillStyle = color;
+			g.fillRect(x, y, width, height);
+		},
+		frameRect(x, y, width, height, lineWidth, color = BLACK) {
+			g.strokeStyle = color;
+			g.lineWidth = lineWidth;
+			g.strokeRect(x + lineWidth / 2, y + lineWidth / 2, width - lineWidth, height - lineWidth);
+		},
+		circle(x, y, r, color = BLACK) {
+			shape(color, () => g.arc(x, y, r, 0, Math.PI * 2));
+		},
+		ring(x, y, r, lineWidth, color = BLACK) {
+			g.strokeStyle = color;
+			g.lineWidth = lineWidth;
+			g.beginPath();
+			g.arc(x, y, r, 0, Math.PI * 2);
+			g.stroke();
+		},
+		line(x1, y1, x2, y2, lineWidth, color = BLACK) {
+			g.strokeStyle = color;
+			g.lineWidth = lineWidth;
+			g.lineCap = "round";
+			g.beginPath();
+			g.moveTo(x1, y1);
+			g.lineTo(x2, y2);
+			g.stroke();
+		},
+
+		/**
+		 * Text in the editor's font, at 24, 40 or 64 px, wrapped to `width`. `x` is the middle of the lines,
+		 * or their left or right edge, as `align` says; `y` is the top of the first line. Returns the bottom
+		 * of the last line.
+		 */
+		text(words, { x = W / 2, y, size = 40, align = "center", width = 720, color = BLACK }) {
+			g.font = `700 ${size}px ${FONT}`;
+			g.fillStyle = color;
+			const measure = (line) => g.measureText(line).width;
+			const step = Math.round(size * 1.3);
+			const lines = wrap(words, width, measure);
+			lines.forEach((line, index) => {
+				const lineWidth = measure(line);
+				const left = align === "center" ? x - Math.floor(lineWidth / 2) : align === "right" ? x - Math.ceil(lineWidth) : x;
+				g.fillText(line, Math.round(left), y + size + index * step);
+			});
+			return y + lines.length * step;
+		},
+
+		/**
+		 * Sprite layers drawn `scale` px per cell, with the middle of their solid cells at `cx` and their
+		 * bottom at `bottom`. `line` is the outline's color, `coat` the dog's colors.
+		 */
+		sprite(layers, { cx, bottom, scale, flip = false, line = BLACK, halo = line, coat = null }) {
+			let cells = outline(compose(typeof layers[0] === "string" ? [{ rows: layers }] : layers));
+			if (flip) {
+				cells = mirror(cells);
+			}
+			let minX = Infinity, maxX = -Infinity, maxY = -Infinity;
+			cells.forEach((row, y) => row.forEach((cell, x) => {
+				if (cell !== "." && cell !== "a") {
+					minX = Math.min(minX, x);
+					maxX = Math.max(maxX, x);
+					maxY = Math.max(maxY, y);
+				}
+			}));
+			const left = Math.round(cx - ((minX + maxX + 1) * scale) / 2);
+			const top = Math.round(bottom - (maxY + 1) * scale);
+			const colors = {
+				o: coat?.o ?? WHITE, e: coat?.e ?? BLACK, n: BLACK, "#": BLACK, w: WHITE, W: WHITE,
+				d: dots.half, l: dots.light, h: line, a: halo, L: line,
+			};
+			cells.forEach((row, y) => row.forEach((cell, x) => {
+				if (cell !== ".") {
+					g.fillStyle = colors[cell];
+					g.fillRect(left + x * scale, top + y * scale, scale, scale);
+				}
+			}));
+		},
+
+		/** The pixel dog, in a pose (`standing` or `sleeping`), with her halo if the page asks for it. */
+		dog(pose, { glasses = false, happy = false, line = BLACK, haloColor = line, ...place }) {
+			const dog = DOG[pose];
+			const layers = [{ rows: dog.rows }];
+			if (glasses) layers.push({ rows: GLASSES, x: dog.glasses[0], y: dog.glasses[1] });
+			if (happy) layers.push({ rows: HAPPY, x: dog.happy[0], y: dog.happy[1] });
+			if (options.halo) layers.push({ rows: HALO, x: dog.halo[0], y: dog.halo[1] });
+			p.sprite(layers, { ...place, line, halo: haloColor, coat });
+		},
+
+		/** Luli in a pose, with options: see LULI_POSES. */
+		luli(pose = "peek", place = {}) {
+			g.drawImage(drawLuli(pose, { halo: options.halo, ...place }), 0, 0);
+		},
+		/** Decorations drawn with a kit in frame coordinates (drawFlower, drawTwinkles, …); white lines at `night`. */
+		decor(draw, { night = false } = {}) {
+			g.drawImage(renderKit(draw, { night, lineWidth: 4 }), 0, 0);
+		},
+		/**
+		 * A space for a photo, w × h at (x, y), labelled with its size: in the editor, add the photo over it
+		 * and fit it to the space. With `polaroid`, a card around it with a bottom that tall, for a caption.
+		 */
+		photo(x, y, w, h, { polaroid = 0 } = {}) {
+			p.decor((kit) => (polaroid ? drawPolaroid(kit, x, y, w, h, polaroid) : drawPhotoSpot(kit, x, y, w, h)));
+			p.text("sua foto aqui", { x: x + w / 2, y: y + h / 2 + 14, size: 24, width: w });
+			p.text(`${w} × ${h}`, { x: x + w / 2, y: y + h / 2 + 44, size: 24, width: w });
+		},
+		textWidth(words, size) {
+			g.font = `700 ${size}px ${FONT}`;
+			return g.measureText(words).width;
+		},
+
+		/** A cloud on a flat bottom, `width` wide, with its middle at `cx`. */
+		cloud(cx, bottom, width, { fill = WHITE, line = BLACK, lineWidth = 5 } = {}) {
+			const puffs = [[-0.33, -0.16, 0.16], [-0.13, -0.27, 0.2], [0.12, -0.29, 0.22], [0.33, -0.17, 0.16]];
+			const draw = (color, grow) => {
+				for (const [dx, dy, r] of puffs) p.circle(cx + dx * width, bottom + dy * width, r * width + grow, color);
+				p.rect(cx - 0.33 * width - grow, bottom - 0.2 * width - grow, 0.66 * width + 2 * grow, 0.2 * width + 2 * grow, color);
+			};
+			draw(line, lineWidth);
+			draw(fill, 0);
+		},
+		/** A sun; a `rising` one has rays only above the horizon at `y`. */
+		sun(x, y, r, { color = BLACK, rays = 12, bg = WHITE, rising = false } = {}) {
+			for (let i = rising ? 1 : 0; i < rays; i++) {
+				const angle = rising ? Math.PI + (i / rays) * Math.PI : (i / rays) * Math.PI * 2;
+				p.line(x + Math.cos(angle) * (r + 14), y + Math.sin(angle) * (r + 14), x + Math.cos(angle) * (r + 38), y + Math.sin(angle) * (r + 38), 7, color);
+			}
+			p.circle(x, y, r, color);
+			p.circle(x, y, r - 7, bg === WHITE ? dots.light : bg);
+		},
+		moon(x, y, r, color = WHITE, bg = BLACK) {
+			p.circle(x, y, r, color);
+			p.circle(x + r * 0.45, y - r * 0.3, r * 0.82, bg);
+		},
+		/** A four-pointed twinkle. */
+		sparkle(x, y, r, color = BLACK) {
+			const k = r * 0.16;
+			shape(color, () => {
+				g.moveTo(x, y - r);
+				g.quadraticCurveTo(x + k, y - k, x + r, y);
+				g.quadraticCurveTo(x + k, y + k, x, y + r);
+				g.quadraticCurveTo(x - k, y + k, x - r, y);
+				g.quadraticCurveTo(x - k, y - k, x, y - r);
+			});
+		},
+		star(x, y, r, color = BLACK) {
+			shape(color, () => {
+				for (let i = 0; i < 10; i++) {
+					const angle = -Math.PI / 2 + (i * Math.PI) / 5;
+					const radius = i % 2 === 0 ? r : r * 0.45;
+					g.lineTo(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius);
+				}
+			});
+		},
+		heart(x, y, width, color = BLACK) {
+			g.fillStyle = color;
+			g.fill(heartPath(x, y, width));
+		},
+		heartOutline(x, y, width, lineWidth, color = BLACK, bg = WHITE) {
+			p.heart(x, y, width, color);
+			p.heart(x, y + lineWidth * 0.3, width - lineWidth * 2.6, bg);
+		},
+		/** A paw print, its toes pointing `angle` radians clockwise from up. */
+		paw(x, y, size, angle = 0, color = BLACK) {
+			g.save();
+			g.translate(x, y);
+			g.rotate(angle);
+			shape(color, () => g.ellipse(0, size * 0.2, size * 0.3, size * 0.24, 0, 0, Math.PI * 2));
+			for (const [dx, dy] of [[-0.38, -0.12], [-0.14, -0.36], [0.14, -0.36], [0.38, -0.12]]) {
+				shape(color, () => g.ellipse(dx * size, dy * size, size * 0.13, size * 0.17, dx * 0.9, 0, Math.PI * 2));
+			}
+			g.restore();
+		},
+		firework(x, y, r, color = BLACK) {
+			for (let i = 0; i < 14; i++) {
+				const angle = (i / 14) * Math.PI * 2;
+				const cos = Math.cos(angle), sin = Math.sin(angle);
+				p.line(x + cos * r * 0.3, y + sin * r * 0.3, x + cos * r * 0.85, y + sin * r * 0.85, 4, color);
+				p.circle(x + cos * r, y + sin * r, 4, color);
+			}
+		},
+		snowflake(x, y, r, color = BLACK) {
+			for (let i = 0; i < 3; i++) {
+				const angle = (i * Math.PI) / 3;
+				const cos = Math.cos(angle), sin = Math.sin(angle);
+				p.line(x - cos * r, y - sin * r, x + cos * r, y + sin * r, 4, color);
+				for (const end of [-1, 1]) {
+					const bx = x + cos * r * 0.55 * end, by = y + sin * r * 0.55 * end;
+					for (const turn of [-0.7, 0.7]) {
+						const branch = angle + (end < 0 ? Math.PI : 0) + turn * 1.0;
+						p.line(bx, by, bx + Math.cos(branch) * r * 0.32, by + Math.sin(branch) * r * 0.32, 3, color);
+					}
+				}
+			}
+		},
+		/** "Z z" rising to the right from (x, y). */
+		zzz(x, y, color = BLACK) {
+			p.text("Z", { x, y, size: 24, align: "left", color });
+			p.text("Z", { x: x + 24, y: y - 44, size: 40, align: "left", color });
+		},
+		/** Party bunting (bandeirinhas): two strings across the top, flags solid and dotted in turn. */
+		bunting({ y = 6, sag = 34, size = 30, color = BLACK } = {}) {
+			for (const [from, to] of [[-10, W / 2], [W / 2, W + 10]]) {
+				const at = (t) => [from + (to - from) * t, y + sag * 4 * t * (1 - t)];
+				g.strokeStyle = color;
+				g.lineWidth = 3;
+				g.beginPath();
+				for (let t = 0; t <= 1; t += 0.02) g.lineTo(...at(t));
+				g.stroke();
+				const flags = 7;
+				for (let i = 0; i < flags; i++) {
+					const [x, top] = at((i + 0.5) / flags);
+					const fill = i % 2 ? dots.half : color;
+					shape(color, () => {
+						g.moveTo(x - size / 2 - 3, top - 2);
+						g.lineTo(x + size / 2 + 3, top - 2);
+						g.lineTo(x, top + size * 1.1 + 4);
+					});
+					shape(fill, () => {
+						g.moveTo(x - size / 2 + 2, top + 1);
+						g.lineTo(x + size / 2 - 2, top + 1);
+						g.lineTo(x, top + size * 1.1 - 3);
+					});
+				}
+			}
+		},
+		/** A dog bed drawn in outline, `width` wide, its middle at `cx`. */
+		bed(cx, bottom, width, height, color = BLACK) {
+			g.strokeStyle = color;
+			g.lineWidth = 5;
+			g.beginPath();
+			g.roundRect(cx - width / 2, bottom - height, width, height, height / 2);
+			g.stroke();
+			g.lineWidth = 3;
+			g.beginPath();
+			g.roundRect(cx - width / 2 + 16, bottom - height + 14, width - 32, height - 22, height / 2 - 12);
+			g.stroke();
+		},
+		ground(y, color = BLACK) {
+			p.rect(40, y, W - 80, 4, color);
+		},
+	};
+	return p;
+}
+
+/** Every pixel to pure black or white, at 50 %. */
+function oneBit(g) {
+	const image = g.getImageData(0, 0, W, H);
+	const data = image.data;
+	for (let i = 0; i < data.length; i += 4) {
+		const value = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114 < 128 ? 0 : 255;
+		data[i] = data[i + 1] = data[i + 2] = value;
+		data[i + 3] = 255;
+	}
+	g.putImageData(image, 0, 0);
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// The frames. `when` is a suggestion for its schedule rule (the 3-hour blocks, D26).
+// ---------------------------------------------------------------------------------------------------------
+
+const KINDS = [
+	["luli", "Luli"],
+	["photo", "With a photo"],
+	["anytime", "Anytime"],
+	["morning", "Morning"],
+	["work", "Work"],
+	["lunch", "Lunch"],
+	["afternoon", "Afternoon"],
+	["evening", "Evening"],
+	["night", "Night"],
+	["dates", "Special dates"],
+	["week", "Days of the week"],
+];
+
+const now = new Date();
+const NEXT_YEAR = now.getMonth() === 0 ? now.getFullYear() : now.getFullYear() + 1;
+
+/** How a call to p.luli reads, to show under its template. */
+function luliCall(pose, options = {}) {
+	const shown = Object.entries(options).map(([key, value]) => `${key}: ${typeof value === "string" ? `"${value}"` : value}`);
+	return `p.luli("${pose}"${shown.length ? `, { ${shown.join(", ")} }` : ""})`;
+}
+
+// Luli's poses on empty frames, to put messages around. Each card shows the calls that draw it.
+const LULI_TEMPLATES = [
+	{ id: "peek", title: "Peeking over the bottom edge", calls: [["peek"]] },
+	{ id: "peek-corner", title: "Peeking, small, in a corner", calls: [["peek", { x: 690, scale: 0.5 }]] },
+	{ id: "head-top", title: "Just the top of her head", calls: [["headTop"]] },
+	{ id: "chin", title: "Chin on the edge, puppy eyes", calls: [["chin"]] },
+	{ id: "upside-down", title: "Hanging upside down from the top", calls: [["upsideDown", { scale: 0.75 }]] },
+	{ id: "side-left", title: "Peeking in from the left edge", calls: [["side"]] },
+	{ id: "side-right", title: "Peeking in from the right edge", calls: [["side", { x: W, flip: true }]] },
+	{ id: "over-heart", title: "Peeking over a heart", calls: [["peek", { y: 250, scale: 0.75, over: "heart" }]] },
+	{ id: "over-sign", title: "Peeking over a sign, for a message", calls: [["peek", { y: 250, scale: 0.75, over: "sign" }]] },
+	{ id: "over-gift", title: "Peeking over a gift", calls: [["peek", { y: 260, scale: 0.75, over: "gift" }]] },
+	{ id: "standing", title: "Standing, side-on", calls: [["standing"]] },
+	{ id: "sausage", title: "A long sausage along the bottom", calls: [["sausage"]] },
+	{ id: "sitting", title: "Sitting in a corner, looking up", calls: [["sitting", { x: 590, flip: true }]] },
+	{ id: "asleep", title: "Curled up asleep", calls: [["asleep"]] },
+	{ id: "asleep-night", title: "Curled up asleep, at night", night: true, calls: [["asleep", { night: true }]] },
+	{ id: "trotting-heart", title: "Trotting in with a heart", calls: [["trotting"]] },
+	{ id: "trotting-letter", title: "Trotting in with a letter", calls: [["trotting", { holding: "letter" }]] },
+	{
+		id: "eyes", title: "Eyes: open, happy, closed; sleepy, wink, puppy", shown: 'p.luli("peek", { eyes: "happy" })',
+		calls: ["open", "happy", "closed", "sleepy", "wink", "puppy"].map((eyes, i) => (
+			["peek", { x: 133 + (i % 3) * 267, y: i < 3 ? 240 : H, scale: 0.6, eyes }]
+		)),
+	},
+	{
+		id: "mouths", title: "Mouths: smile, tongue, o", shown: 'p.luli("peek", { mouth: "o" })',
+		calls: ["smile", "tongue", "o"].map((mouth, i) => ["peek", { x: 133 + i * 267, scale: 0.8, mouth }]),
+	},
+];
+
+const FRAMES = [
+	...LULI_TEMPLATES.map(({ id, title, calls, night, shown }) => ({
+		id: `luli-${id}`, kind: "luli", title: `Luli · ${title}`, code: shown ?? calls.map((call) => luliCall(...call)).join("; "),
+		draw(p) {
+			if (night) p.fill(BLACK);
+			for (const [pose, options] of calls) p.luli(pose, options);
+		},
+	})),
+
+	// Frames without Luli: flowers and ✨, a photo of you two (or of her), or a message for any day.
+	{
+		id: "foto-polaroid", kind: "photo", title: "A polaroid of you two", when: "Any day · photo 280 × 280 at x 80, y 56",
+		draw(p) {
+			p.photo(80, 56, 280, 280, { polaroid: 70 });
+			p.text("nós", { x: 220, y: 342, size: 40 });
+			p.decor((kit) => {
+				drawLeaf(kit, 372, 404, 60, -0.5);
+				drawLeaf(kit, 360, 420, 56, 0.5);
+				drawRose(kit, 336, 418, 24);
+				drawDaisy(kit, 384, 394, 28, 0.3);
+				drawTwinkles(kit, 720, 92, 24);
+				drawTwinkles(kit, 480, 410, 14);
+			});
+			p.text("Meu lugar favorito é do seu lado.", { x: 600, y: 160, size: 40, width: 320 });
+		},
+	},
+	{
+		id: "foto-guirlanda", kind: "photo", title: "A photo with flowers in the corners", when: "Any day · photo 360 × 270 at x 220, y 36",
+		draw(p) {
+			p.photo(220, 36, 360, 270);
+			p.decor((kit) => {
+				for (const corner of ["top-left", "top-right", "bottom-left", "bottom-right"]) drawCornerBunch(kit, corner, 0.72);
+				drawTwinkles(kit, 640, 300, 16);
+				drawTwinkles(kit, 190, 250, 12);
+			});
+			p.text("Você deixa tudo mais bonito.", { y: 330, size: 40, width: 440 });
+		},
+	},
+	{
+		id: "foto-metade", kind: "photo", title: "Half photo, half message", when: "Any day · photo 400 × 480 at x 0, y 0",
+		draw(p) {
+			p.photo(0, 0, 400, 480);
+			p.decor((kit) => {
+				drawCornerBunch(kit, "bottom-right", 0.9);
+				drawTwinkles(kit, 726, 74, 24);
+			});
+			p.text("Você é a melhor parte dos meus dias.", { x: 590, y: 110, size: 40, width: 320 });
+		},
+	},
+	{
+		id: "duas-fotos", kind: "photo", title: "Two polaroids: her, and you two", when: "Any day · photos 270 × 250 at x 60, y 50 and x 470, y 90",
+		draw(p) {
+			p.photo(60, 50, 270, 250, { polaroid: 64 });
+			p.photo(470, 90, 270, 250, { polaroid: 64 });
+			p.text("você", { x: 195, y: 308, size: 40 });
+			p.text("nós", { x: 605, y: 348, size: 40 });
+			p.decor((kit) => {
+				kit.part(heartPath(400, 70, 56), 0.3);
+				drawTwinkles(kit, 440, 160, 16);
+				drawVine(kit, 30, 452, 770, 452);
+			});
+		},
+	},
+	{
+		id: "voce-brilha", kind: "anytime", title: "You shine ✨", when: "Any day, any block",
+		draw(p) {
+			const bottom = p.text("Você brilha.", { x: 60, y: 120, size: 64, align: "left", width: 460 });
+			p.text("E deixa tudo ao seu redor mais bonito.", { x: 60, y: bottom + 10, size: 40, align: "left", width: 420 });
+			p.decor((kit) => {
+				drawTwinkles(kit, 650, 230, 70);
+				drawTwinkles(kit, 720, 400, 22);
+				drawTwinkles(kit, 560, 90, 16);
+			});
+		},
+	},
+	{
+		id: "te-amo-brilho", kind: "anytime", title: "I love you, with twinkles", when: "Any day, any block",
+		draw(p) {
+			const bottom = p.text("Te amo.", { y: 150, size: 64 });
+			p.text("Hoje e sempre.", { y: bottom + 6, size: 40 });
+			p.decor((kit) => {
+				drawTwinkles(kit, 190, 120, 34);
+				drawTwinkles(kit, 660, 150, 26);
+				drawTwinkles(kit, 140, 380, 20);
+				drawTwinkles(kit, 680, 380, 38);
+				drawTwinkles(kit, 410, 420, 14);
+			});
+		},
+	},
+	{
+		id: "flores-pra-voce", kind: "anytime", title: "Flowers for you: a bouquet", when: "Any day, any block",
+		draw(p) {
+			p.decor((kit) => {
+				drawBouquet(kit, 220, 470);
+				drawTwinkles(kit, 730, 400, 20);
+			});
+			const bottom = p.text("Flores pra você.", { x: 580, y: 90, size: 64, width: 400 });
+			p.text("Porque você merece todo dia.", { x: 580, y: bottom + 10, size: 40, width: 380 });
+		},
+	},
+	{
+		id: "borda-floral", kind: "anytime", title: "A vine all around", when: "Any day, any block",
+		draw(p) {
+			p.decor((kit) => {
+				drawVine(kit, 70, 30, 730, 30);
+				drawVine(kit, 70, 450, 730, 450);
+				drawVine(kit, 30, 70, 30, 410);
+				drawVine(kit, 770, 70, 770, 410);
+				for (const [x, y] of [[34, 34], [766, 34], [34, 446], [766, 446]]) drawDaisy(kit, x, y, 30, x * 0.01);
+				drawTwinkles(kit, 620, 110, 18);
+				drawTwinkles(kit, 200, 380, 14);
+			});
+			p.text("Eu te escolheria de novo, em todas as vidas.", { y: 140, size: 40, width: 520 });
+		},
+	},
+	{
+		id: "jardim", kind: "anytime", title: "A little garden along the bottom", when: "Mornings, any day",
+		draw(p) {
+			const bottom = p.text("Que seu dia floresça.", { y: 24, size: 64 });
+			p.text("Você merece tudo de mais bonito.", { y: bottom + 4, size: 40 });
+			p.decor((kit) => {
+				const kinds = ["daisy", "tulip", "blossom", "rose", "daisy", "tulip", "blossom", "daisy", "tulip"];
+				kinds.forEach((kind, i) => {
+					const x = 50 + i * 87;
+					const top = i % 2 ? 340 : 380;
+					drawStem(kit, x, H + 10, x + (i % 3) * 4 - 4, top, i % 2 ? 10 : -10);
+					drawLeaf(kit, x, 452, 40, i % 2 ? -0.5 : -2.6);
+					// Round flowers turn any way; tulips only lean a little.
+					drawFlower(kit, kind, x + (i % 3) * 4 - 4, top, kind === "rose" ? 26 : 30, kind === "tulip" ? (i % 2 ? 0.12 : -0.12) : i * 0.5);
+				});
+				drawTwinkles(kit, 130, 270, 16);
+				drawTwinkles(kit, 690, 280, 20);
+			});
+		},
+	},
+	{
+		id: "que-sorte", kind: "anytime", title: "Lucky me, flowers in two corners", when: "Any day, any block",
+		draw(p) {
+			p.decor((kit) => {
+				drawCornerBunch(kit, "top-left");
+				drawCornerBunch(kit, "bottom-right");
+				drawTwinkles(kit, 660, 120, 22);
+				drawTwinkles(kit, 150, 380, 16);
+			});
+			p.text("Que sorte a minha ter você.", { y: 150, size: 64, width: 520 });
+		},
+	},
+	{
+		id: "coracao-flores", kind: "anytime", title: "A heart of flowers", when: "Any day, any block",
+		draw(p) {
+			p.decor((kit) => {
+				drawHeartWreath(kit, 400, 226, 11.5);
+				drawTwinkles(kit, 680, 110, 24);
+				drawTwinkles(kit, 130, 390, 18);
+			});
+			p.text("Meu coração\né seu.", { y: 190, size: 40, width: 300 });
+		},
+	},
+	{
+		id: "lembrete", kind: "anytime", title: "A reminder note", when: "Any day, any block",
+		draw(p) {
+			p.decor((kit) => {
+				kit.at(400, 240, -0.035, () => {
+					kit.part(rectPath(-226, -164, 460, 334, 8), 0.45, false);
+					kit.part(rectPath(-236, -176, 460, 334, 8), 0.92);
+				});
+				drawBlossom(kit, 400, 72, 24, 0.2);
+				drawTwinkles(kit, 640, 360, 20);
+			});
+			const bottom = p.text("Lembrete do dia:", { y: 130, size: 40 });
+			p.text("você é incrível.", { y: bottom + 8, size: 64, width: 420 });
+		},
+	},
+	{
+		id: "lugar-favorito", kind: "anytime", title: "My favourite place, underlined with a vine", when: "Any day, any block",
+		draw(p) {
+			const bottom = p.text("Você é o meu lugar favorito.", { y: 90, size: 64, width: 600 });
+			p.decor((kit) => {
+				drawVine(kit, 210, bottom + 30, 590, bottom + 30, { flowerEvery: 190 });
+				drawTwinkles(kit, 690, 100, 22);
+				drawTwinkles(kit, 120, 320, 16);
+			});
+		},
+	},
+	{
+		id: "noite-brilho", kind: "night", title: "Good night, with twinkles", when: "Every day · 21:00",
+		draw(p) {
+			p.fill(BLACK);
+			p.decor((kit) => {
+				for (const [x, y, size] of [[110, 90, 26], [700, 70, 20], [690, 410, 30], [160, 400, 18], [420, 440, 12], [740, 240, 14]]) {
+					drawTwinkles(kit, x, y, size);
+				}
+			}, { night: true });
+			const bottom = p.text(`Boa noite, ${p.her}.`, { y: 130, size: 64, width: 640, color: WHITE });
+			p.text("Sonhe com coisas bonitas.", { y: bottom + 8, size: 40, color: WHITE });
+		},
+	},
+
+	{
+		id: "bom-dia", kind: "morning", title: "Good morning, with the sunrise", when: "Every day · 06:00",
+		draw(p) {
+			p.text(`Bom dia, ${p.her}!`, { y: 28, size: 64 });
+			p.text("Que hoje seja um dia leve.", { y: 118, size: 40 });
+			p.sun(620, 424, 62, { rising: true, rays: 8 });
+			p.rect(0, 424, W, H - 424, WHITE);
+			p.ground(424);
+			p.dog("standing", { cx: 300, bottom: 426, scale: 6, happy: true });
+		},
+	},
+	{
+		id: "acorda", kind: "morning", title: "Wake up, coffee's ready", when: "Weekdays · 06:00",
+		draw(p) {
+			p.text("Acorda, dorminhoca!", { y: 28, size: 64 });
+			p.text("O café já está te esperando.", { y: 118, size: 40 });
+			p.ground(430);
+			p.dog("standing", { cx: 290, bottom: 432, scale: 6 });
+			p.sprite(MUG, { cx: 610, bottom: 432, scale: 10 });
+		},
+	},
+	{
+		id: "primeiro-pensamento", kind: "morning", title: "The first thing I think of", when: "Every day · 06:00",
+		draw(p) {
+			p.frameRect(16, 16, W - 32, H - 32, 4);
+			p.frameRect(28, 28, W - 56, H - 56, 2);
+			const bottom = p.text("Bom dia!", { y: 70, size: 64 });
+			p.text("Você é a primeira coisa em que eu penso quando acordo.", { y: bottom + 20, size: 40, width: 600 });
+			p.heart(400, 372, 70);
+			p.sparkle(316, 360, 14);
+			p.sparkle(484, 360, 14);
+		},
+	},
+	{
+		id: "torcendo", kind: "work", title: "Cheering you on", when: "Weekdays · 09:00",
+		draw(p) {
+			p.text("Bom trabalho!", { y: 28, size: 64 });
+			p.text("Estou torcendo por você.", { y: 118, size: 40 });
+			p.ground(440);
+			p.dog("standing", { cx: 400, bottom: 442, scale: 6, happy: true });
+			p.sparkle(170, 300, 18);
+			p.sparkle(630, 280, 22);
+			p.sparkle(680, 370, 12);
+			p.sparkle(120, 390, 12);
+		},
+	},
+	{
+		id: "voce-consegue", kind: "work", title: "You can do it, one step at a time", when: "Weekdays · 09:00",
+		draw(p) {
+			p.text("Você consegue!", { y: 40, size: 64 });
+			p.text("Um passo de cada vez.", { y: 130, size: 40 });
+			for (let i = 0; i < 5; i++) {
+				p.paw(70 + i * 84, i % 2 ? 392 : 424, 40, Math.PI / 2);
+			}
+			p.dog("standing", { cx: 620, bottom: 440, scale: 5 });
+		},
+	},
+	{
+		id: "respira", kind: "work", title: "Breathe, it's fine", when: "Weekdays · 15:00",
+		draw(p) {
+			const bottom = p.text("Respira fundo.", { y: 30, size: 64 });
+			p.text("Você dá conta de tudo. E se hoje não der, tudo bem também.", { y: bottom + 6, size: 40, width: 660 });
+			p.cloud(120, 330, 150);
+			p.cloud(690, 300, 120);
+			p.ground(440);
+			p.dog("sleeping", { cx: 400, bottom: 442, scale: 6 });
+		},
+	},
+	{
+		id: "almoco", kind: "lunch", title: "Lunch break, eat well", when: "Every day · 12:00",
+		draw(p) {
+			p.text("Hora do almoço!", { y: 28, size: 64 });
+			p.text("Pausa merecida. Come direitinho!", { y: 118, size: 40 });
+			p.ground(430);
+			p.dog("standing", { cx: 300, bottom: 432, scale: 6, happy: true });
+			p.sprite(BOWL, { cx: 610, bottom: 432, scale: 10 });
+		},
+	},
+	{
+		id: "agua", kind: "lunch", title: "Have you had water today?", when: "Every day · 12:00 or 15:00",
+		draw(p) {
+			p.text("Já bebeu água hoje?", { y: 28, size: 64 });
+			p.text("Bebe uma aguinha, vai.", { y: 118, size: 40 });
+			p.ground(430);
+			p.dog("standing", { cx: 300, bottom: 432, scale: 6 });
+			p.sprite(GLASS, { cx: 610, bottom: 432, scale: 11 });
+		},
+	},
+	{
+		id: "falta-pouco", kind: "afternoon", title: "Almost there", when: "Weekdays · 15:00",
+		draw(p) {
+			p.text("Falta pouco!", { y: 34, size: 64 });
+			p.text("Você está indo muito bem.", { y: 124, size: 40 });
+			p.frameRect(80, 380, 600, 48, 5);
+			p.rect(88, 388, 432, 32, p.dots.half);
+			p.dog("standing", { cx: 470, bottom: 380, scale: 4, flip: false });
+			p.sprite(FLAG, { cx: 712, bottom: 428, scale: 8 });
+		},
+	},
+	{
+		id: "pensando", kind: "afternoon", title: "Thinking of you", when: "Any day · 15:00",
+		draw(p) {
+			p.text("Pensando em você.", { y: 34, size: 64 });
+			p.text("Só passei pra dizer que te amo.", { y: 124, size: 40 });
+			p.ground(440);
+			p.dog("standing", { cx: 300, bottom: 442, scale: 6, happy: true });
+			p.heart(510, 300, 44);
+			p.heart(580, 240, 32);
+			p.heart(640, 196, 22);
+		},
+	},
+	{
+		id: "expediente", kind: "evening", title: "Work's over, sunset", when: "Weekdays · 18:00",
+		draw(p) {
+			p.text("Acabou o expediente!", { y: 28, size: 64 });
+			p.text("Que orgulho de você. Agora descansa.", { y: 118, size: 40 });
+			p.circle(520, 440, 160);
+			for (let i = 0; i < 6; i++) p.rect(340, 428 - i * 22, 360, 12 - i * 2, WHITE);
+			p.rect(0, 440, W, H - 440, WHITE);
+			p.ground(440);
+			p.dog("standing", { cx: 210, bottom: 442, scale: 5 });
+		},
+	},
+	{
+		id: "boa-noite", kind: "night", title: "Good night, moon and stars", when: "Every day · 21:00",
+		draw(p) {
+			p.fill(BLACK);
+			p.moon(150, 140, 78);
+			for (const [x, y, r] of [[40, 50, 12], [250, 34, 9], [60, 300, 8], [250, 300, 13], [770, 310, 9], [120, 420, 10]]) p.sparkle(x, y, r, WHITE);
+			const bottom = p.text(`Boa noite, ${p.her}.`, { x: 520, y: 50, size: 64, width: 500, color: WHITE });
+			p.text("Durma bem. Te amo.", { x: 520, y: bottom + 6, size: 40, width: 500, color: WHITE });
+			p.dog("sleeping", { cx: 520, bottom: 440, scale: 5, line: WHITE });
+			p.zzz(668, 334, WHITE);
+		},
+	},
+	{
+		id: "bons-sonhos", kind: "night", title: "Sweet dreams, asleep on her bed", when: "Every day · 21:00",
+		draw(p) {
+			p.fill(BLACK);
+			for (const [x, y, r] of [[60, 60, 12], [740, 50, 10], [110, 300, 8], [700, 260, 14], [40, 420, 10], [760, 410, 8]]) p.sparkle(x, y, r, WHITE);
+			p.text("Bons sonhos.", { y: 40, size: 64, color: WHITE });
+			p.text("Que amanhã seja ainda melhor.", { y: 130, size: 40, color: WHITE });
+			p.bed(400, 452, 420, 80, WHITE);
+			p.dog("sleeping", { cx: 400, bottom: 432, scale: 5, line: WHITE });
+		},
+	},
+	{
+		id: "shhh", kind: "night", title: "Shhh, time to sleep", when: "Every day · 00:00 and 03:00",
+		draw(p) {
+			p.fill(BLACK);
+			p.moon(680, 110, 46);
+			for (const [x, y, r] of [[80, 70, 10], [560, 60, 8], [180, 200, 8], [740, 260, 10]]) p.sparkle(x, y, r, WHITE);
+			p.text("Shhh...", { y: 100, size: 64, color: WHITE });
+			p.text("Hora de dormir.", { y: 190, size: 40, color: WHITE });
+			p.dog("sleeping", { cx: 400, bottom: 430, scale: 4, line: WHITE });
+			p.zzz(500, 350, WHITE);
+		},
+	},
+	{
+		id: "aniversario", kind: "dates", title: "Her birthday", when: "Her birthday · all day",
+		draw(p) {
+			p.bunting();
+			p.text("Feliz aniversário!", { y: 74, size: 64 });
+			p.text(`Hoje o dia é todo seu, ${p.her}.`, { y: 164, size: 40 });
+			p.ground(440);
+			p.dog("standing", { cx: 270, bottom: 442, scale: 5, happy: true });
+			p.sprite(CAKE, { cx: 590, bottom: 442, scale: 8 });
+		},
+	},
+	{
+		id: "namoro", kind: "dates", title: "Our anniversary", when: "Your anniversary · all day",
+		draw(p) {
+			const bottom = p.text("Feliz aniversário de namoro!", { y: 24, size: 64, width: 640 });
+			p.text("Mais um ano escolhendo você, todos os dias.", { y: bottom + 4, size: 40, width: 640 });
+			p.heartOutline(350, 380, 130, 10);
+			p.heart(450, 384, 130);
+			p.sparkle(250, 320, 16);
+			p.sparkle(560, 330, 18);
+		},
+	},
+	{
+		id: "namorados", kind: "dates", title: "Valentine's Day (12 June)", when: "12 June · all day",
+		draw(p) {
+			for (let x = 40; x <= W - 40; x += 60) {
+				p.heart(x, 36, 26);
+				p.heart(x, H - 36, 26);
+			}
+			for (let y = 96; y <= H - 96; y += 72) {
+				p.heart(40, y, 26);
+				p.heart(W - 40, y, 26);
+			}
+			const bottom = p.text("Feliz Dia dos Namorados!", { y: 110, size: 64, width: 600 });
+			p.text("Te amo mais que ontem e menos que amanhã.", { y: bottom + 12, size: 40, width: 560 });
+		},
+	},
+	{
+		id: "natal", kind: "dates", title: "Christmas", when: "24–25 December · all day",
+		draw(p) {
+			p.text("Feliz Natal!", { y: 28, size: 64 });
+			p.text("Você é o meu melhor presente.", { y: 118, size: 40 });
+			for (const [x, y, r] of [[60, 60, 18], [740, 60, 18], [80, 250, 12], [730, 220, 14]]) p.snowflake(x, y, r);
+			p.ground(440);
+			p.dog("standing", { cx: 250, bottom: 442, scale: 5, happy: true });
+			p.sprite(TREE, { cx: 580, bottom: 442, scale: 12 });
+			p.star(580, 230, 24);
+			p.sprite(GIFT, { cx: 470, bottom: 442, scale: 5 });
+			p.sprite(GIFT, { cx: 700, bottom: 442, scale: 4 });
+		},
+	},
+	{
+		id: "ano-novo", kind: "dates", title: "New Year, fireworks", when: "31 December 21:00 → 1 January",
+		draw(p) {
+			p.fill(BLACK);
+			p.firework(100, 90, 64, WHITE);
+			p.firework(700, 84, 54, WHITE);
+			p.firework(400, 46, 30, WHITE);
+			p.firework(130, 380, 40, WHITE);
+			p.firework(680, 370, 46, WHITE);
+			p.text(`Feliz ${NEXT_YEAR}!`, { y: 110, size: 64, color: WHITE });
+			p.text("Que venham muitos anos juntos.", { y: 200, size: 40, color: WHITE });
+			p.dog("standing", { cx: 400, bottom: 460, scale: 5, happy: true, line: WHITE });
+		},
+	},
+	{
+		id: "sextou", kind: "week", title: "Friday!", when: "Fridays · 12:00 and 15:00",
+		draw(p) {
+			p.bunting();
+			p.text("Sextou!", { y: 74, size: 64 });
+			p.text("O fim de semana já está chegando.", { y: 164, size: 40 });
+			p.ground(440);
+			p.dog("standing", { cx: 400, bottom: 442, scale: 6, glasses: true, happy: true });
+		},
+	},
+	{
+		id: "segunda", kind: "week", title: "Monday again", when: "Mondays · 06:00 and 09:00",
+		draw(p) {
+			const bottom = p.text("Segunda-feira de novo?", { y: 28, size: 64, width: 640 });
+			p.text("Respira: você tira de letra.", { y: bottom + 4, size: 40 });
+			p.ground(440);
+			p.dog("sleeping", { cx: 360, bottom: 442, scale: 5 });
+			p.zzz(500, 360);
+		},
+	},
+	{
+		id: "fim-de-semana", kind: "week", title: "Have a good weekend", when: "Saturdays · from 09:00",
+		draw(p) {
+			p.text("Bom fim de semana!", { y: 28, size: 64 });
+			p.text("Descansa, você merece.", { y: 118, size: 40 });
+			p.sun(660, 300, 40);
+			p.ground(440);
+			p.dog("sleeping", { cx: 340, bottom: 442, scale: 6 });
+		},
+	},
+	{
+		id: "te-amo", kind: "dates", title: "I love you, every 3 hours", when: "Any day, any block",
+		draw(p) {
+			p.heart(400, 200, 330);
+			p.text("Te amo", { y: 120, size: 64, color: WHITE });
+			p.text("Hoje, amanhã e a cada 3 horas.", { y: 394, size: 40 });
+		},
+	},
+];
+
+// ---------------------------------------------------------------------------------------------------------
+// The page.
+// ---------------------------------------------------------------------------------------------------------
+
+const controls = {
+	her: document.getElementById("her"),
+	halo: document.getElementById("halo"),
+	paper: document.getElementById("paper"),
+	actual: document.getElementById("actual"),
+};
+const STORAGE = "inkpost-frame-ideas";
+const cards = [];
+let kind = "all";
+
+function restore() {
+	const saved = JSON.parse(localStorage.getItem(STORAGE) ?? "{}");
+	for (const [name, control] of Object.entries(controls)) {
+		if (name in saved) control[control.type === "checkbox" ? "checked" : "value"] = saved[name];
+	}
+}
+
+function save() {
+	const values = Object.fromEntries(Object.entries(controls).map(([name, control]) => [name, control.type === "checkbox" ? control.checked : control.value]));
+	localStorage.setItem(STORAGE, JSON.stringify(values));
+}
+
+function render(frame, canvas) {
+	const g = canvas.getContext("2d", { willReadFrequently: true });
+	g.fillStyle = WHITE;
+	g.fillRect(0, 0, W, H);
+	frame.draw(painter(g, { her: controls.her.value, halo: controls.halo.checked }));
+	oneBit(g);
+}
+
+function renderAll() {
+	for (const { frame, canvas } of cards) render(frame, canvas);
+}
+
+function filter() {
+	for (const { frame, card } of cards) card.hidden = kind !== "all" && frame.kind !== kind;
+	for (const button of document.querySelectorAll("#filters button")) button.setAttribute("aria-pressed", String(button.dataset.kind === kind));
+}
+
+function build() {
+	const filters = document.getElementById("filters");
+	for (const [value, label] of [["all", "All"], ...KINDS]) {
+		const button = document.createElement("button");
+		button.type = "button";
+		button.dataset.kind = value;
+		button.textContent = label;
+		button.addEventListener("click", () => {
+			kind = value;
+			filter();
+		});
+		filters.append(button);
+	}
+
+	const template = document.getElementById("card-template");
+	const grid = document.getElementById("grid");
+	const zoom = document.getElementById("zoom");
+	for (const frame of FRAMES) {
+		const card = template.content.firstElementChild.cloneNode(true);
+		const canvas = card.querySelector("canvas");
+		card.querySelector("h2").textContent = frame.title;
+		const when = card.querySelector(".when");
+		when.textContent = frame.code ?? frame.when;
+		when.classList.toggle("code", Boolean(frame.code));
+		canvas.setAttribute("aria-label", frame.title);
+		canvas.addEventListener("click", () => {
+			zoom.querySelector("canvas").getContext("2d").drawImage(canvas, 0, 0);
+			zoom.showModal();
+		});
+		card.querySelector("button").addEventListener("click", () => {
+			canvas.toBlob((blob) => {
+				const link = document.createElement("a");
+				link.href = URL.createObjectURL(blob);
+				link.download = `inkpost-${frame.id}.png`;
+				link.click();
+				URL.revokeObjectURL(link.href);
+			}, "image/png");
+		});
+		grid.append(card);
+		cards.push({ frame, card, canvas });
+	}
+	zoom.addEventListener("click", () => zoom.close());
+}
+
+function applyView() {
+	document.body.classList.toggle("paper", controls.paper.checked);
+	document.body.classList.toggle("actual", controls.actual.checked);
+}
+
+let pending = 0;
+document.getElementById("controls").addEventListener("input", () => {
+	save();
+	applyView();
+	cancelAnimationFrame(pending);
+	pending = requestAnimationFrame(renderAll);
+});
+document.getElementById("controls").addEventListener("submit", (event) => event.preventDefault());
+
+restore();
+build();
+filter();
+applyView();
+// The font's @font-face is at the end of the page: wait until it's read.
+document.addEventListener("DOMContentLoaded", () => document.fonts.load(`700 40px ${FONT}`).then(renderAll));
+</script>
+<style>
+/* Noto Sans Bold, cut down to Latin (D22), from inkpost-api/src/main/resources/static/fonts (OFL 1.1). */
+@font-face { font-family: "Inkpost Text"; font-weight: 700; font-display: block; src: url(data:font/woff2;base64,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) format("woff2"); }
+</style>
+</body>
+</html>
