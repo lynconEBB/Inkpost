@@ -19,6 +19,25 @@ The JDK and Node are pinned with mise (`mise.toml`: Temurin 27, Node 24). Run Gr
   - `/actuator/health`: health check
   - `/swagger-ui.html`: API docs (springdoc); "Authorize" with the device key to call `/api/image`
 
+## Deploying (D55)
+
+The app runs on the home server (`lyncon@192.168.15.58`) in `~/inkpost`, which holds only
+`compose.yaml` and `.env` (the device key: `INKPOST_DEVICE_KEY=...`). Run `mise exec -- ./gradlew check`
+first: the image doesn't run the tests. Then, from `inkpost-api/`:
+
+```
+docker build -t inkpost-api .
+docker save inkpost-api -o /tmp/inkpost-api.tar
+scp /tmp/inkpost-api.tar compose.yaml lyncon@192.168.15.58:inkpost/
+ssh lyncon@192.168.15.58 'cd inkpost && docker load -i inkpost-api.tar && rm inkpost-api.tar && docker compose up -d'
+```
+
+That loads the image and (re)starts the app on the server's `127.0.0.1:8080` (`INKPOST_PORT` in
+`.env` changes the port). In `~/inkpost` on the server:
+
+- `docker compose logs -f`: the logs
+- `docker compose cp inkpost-api:/data/inkpost.db .`: a copy of the database
+
 ## Layering: controller → service → repository
 
 - **Controllers** only do HTTP: bind params, call one service, build the response (status, headers,

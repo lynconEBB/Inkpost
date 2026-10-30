@@ -41,3 +41,6 @@ out/
 
 ### Local mise settings, e.g. INKPOST_DEVICE_KEY ###
 /mise.local.toml
+
+### Docker Compose's .env, with INKPOST_DEVICE_KEY (D55) ###
+/.env

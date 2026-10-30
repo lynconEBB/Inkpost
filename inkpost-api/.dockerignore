@@ -1,0 +1,7 @@
+# The Dockerfile only copies the Gradle build and src/main; keep the rest, and the secrets, out of the
+# build context.
+.gradle
+build
+inkpost.db*
+mise.local.toml
+.env

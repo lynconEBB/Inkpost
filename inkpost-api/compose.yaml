@@ -1,0 +1,23 @@
+# The API on the home server (D55), in ~/inkpost there, next to a .env with the device key (D8):
+# INKPOST_DEVICE_KEY=... The image is built on the dev machine and loaded with docker load.
+services:
+  inkpost-api:
+    image: inkpost-api
+    pull_policy: never
+    # Docker starts at boot, and brings the app back after a crash or a reboot.
+    restart: always
+    environment:
+      INKPOST_DEVICE_KEY: ${INKPOST_DEVICE_KEY:?set INKPOST_DEVICE_KEY in .env}
+      # Trust cloudflared's X-Forwarded-Proto: https, or Swagger UI calls the API over http.
+      SERVER_FORWARD_HEADERS_STRATEGY: native
+      # Log times in Brasília. The schedule doesn't depend on it: it uses inkpost.timezone (D27).
+      TZ: America/Sao_Paulo
+    volumes:
+      - data:/data
+    # Only on localhost, for cloudflared on the same machine: the web UI has no login of its own, only
+    # Cloudflare Access (D16).
+    ports:
+      - "127.0.0.1:${INKPOST_PORT:-8080}:8080"
+
+volumes:
+  data:

@@ -595,6 +595,24 @@ center, right) and a color (black or white). It stays editable until Save, like 
 **Why:** the box and the wrapping are what make a message easy to lay out; one font in three sizes
 (D22) keeps it looking right in 1 bit.
 
+### D55. Deployed with Docker Compose, an image built on the dev machine
+Refines D15. `inkpost-api/Dockerfile` builds the app's image on the dev machine; it goes to the
+server as a tar (`docker save`, `scp`, `docker load`), and `inkpost-api/compose.yaml` runs it there.
+The server's `~/inkpost` holds only `compose.yaml` and `.env`. No registry, and no source on the
+server.
+- `restart: always`, and Docker starts at boot: the app comes back after a crash or a reboot.
+- The SQLite file (D40) is `/data/inkpost.db`, in the named volume `data`. The app runs as uid 1000,
+  which owns `/data` in the image, so a new volume starts out writable.
+- The port is published on `127.0.0.1` only, for cloudflared on the same machine: the web UI has no
+  login of its own (D16), so nothing on the LAN may reach it around Cloudflare Access.
+- The device key (D8) is in a gitignored `.env` next to `compose.yaml`; compose won't start without it.
+- The app trusts cloudflared's `X-Forwarded-Proto` (`SERVER_FORWARD_HEADERS_STRATEGY=native`), so
+  Swagger UI calls the API over https.
+- The image doesn't run the tests (the JS tests need Node): `./gradlew check` runs before deploying.
+
+**Why:** the server needs nothing but Docker and two files, and doesn't spend its time on builds. A
+named volume needs no directory or permissions set up on the host.
+
 ## Mount
 
 ### D51. The mount starts from an online design for the same panel, with a flat top
