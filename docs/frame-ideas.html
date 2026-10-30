@@ -9,10 +9,12 @@
 	only (D4), text in the editor's font and sizes (D22). Open the file in a browser; it needs no server.
 
 	Every frame is drawn on a canvas, then every pixel is turned to pure black or white (50 %), so what
-	you see is what the frame would show. The dog is Luli, a brown dachshund, with her halo. In the
-	message frames she and the small props are pixel art: grids of letters (see SPRITES), drawn at a
-	whole number of pixels per cell, with a 1-cell outline added around them. The Luli frames draw her
-	from curves instead (see LULI): a cartoon with flat tones in dots, the style chosen for her.
+	you see is what the frame would show. The dog is Luli, a brown dachshund, with her halo, drawn from
+	curves (see LULI): a cartoon with flat tones in dots. Her props and the decorations are drawn the
+	same way.
+
+	On weekdays she's out from 8 to 18, so the frames that count are the 06:00 block (before she
+	leaves), 18:00 (when she gets home) and 21:00; any-day frames can fill the blocks in between.
 -->
 <style>
 	:root {
@@ -121,182 +123,6 @@ const BLACK = "#000";
 const WHITE = "#fff";
 
 // ---------------------------------------------------------------------------------------------------------
-// Sprites. One letter per cell:
-//   .  nothing          o  coat (or white, for props)   e  ear (the coat's darker part)
-//   n  black            w  white                         #  a black line inside
-//   d  50 % dots        l  25 % dots
-//   h  the line color, never outlined (steam, flames)    a  the halo's color, never outlined
-// Every other cell next to o, e, n, w, #, d or l becomes the outline. Rows may be shorter than the
-// widest one: they're padded with "." on the right.
-// ---------------------------------------------------------------------------------------------------------
-
-const DOG = {
-	standing: {
-		rows: [
-			"...................................ooooo",
-			"..................................ooooooo",
-			".................................ooeeeoooo",
-			".................................oeeeeownoo",
-			".o..............................oeeeeeonnoooo",
-			".oo.............................oeeeeeoooooooonn",
-			".ooo............................oeeeeeoooooooonn",
-			"..ooo..........................ooeeeeeoooooooo",
-			"...ooo..oooooooooooooooooooooooooeeeeeoooooo",
-			"....ooooooooooooooooooooooooooooooeeeeooo",
-			"......ooooooooooooooooooooooooooooeeeooo",
-			"......oooooooooooooooooooooooooooooeeooo",
-			"......oooooooooooooooooooooooooooooooooo",
-			"......oooooooooooooooooooooooooooooooooo",
-			"......ooooooooooooooooooooooooooooooooo",
-			".......ooooooooooooooooooooooooooooooo",
-			".......ooo..ooo.............ooo..ooo",
-			".......ooo..ooo.............ooo..ooo",
-			".......oooo.oooo............oooo.oooo",
-		],
-		halo: [31, -8],
-		glasses: [36, 3],
-		happy: [43, 7],
-	},
-	sleeping: {
-		rows: [
-			"............ooooooooooooooo",
-			".........oooooooooooooooooooooo......ooooo",
-			".......oooooooooooooooooooooooooo...oeeeoooo",
-			"......oooooooooooooooooooooooooooo.oeeeeeoooo",
-			"......oooooooooooooooooooooooooooooeeeeeeooooo",
-			"......oooooooooooooooooooooooooooooeeeeeeo#oo#onn",
-			"......oooooooooooooooooooooooooooooeeeeeeoo##oonn",
-			"......oooooooooooooooooooooooooooooeeeeeeoooooooo",
-			"...oooooooooooooooooooooooooooooooooeeeeeoooooo",
-			".oooooooooooooooooooooooooooooooooooeeee#######o",
-			"oooo...ooooooooooooooooooooooooooooooooooooooooo",
-		],
-		halo: [33, -7],
-	},
-};
-
-const HALO = [
-	"....aaaaaa",
-	"..aa......aa",
-	".a..........a",
-	"..aa......aa",
-	"....aaaaaa",
-];
-
-const GLASSES = [
-	"nnnnwnnn",
-	"...nnwnn",
-	"....nnn",
-];
-
-// A mouth and a tongue, for a happy dog.
-const HAPPY = [
-	"###",
-	".w",
-	".w",
-];
-
-const MUG = [
-	"...h...h",
-	"....h...h",
-	"...h...h",
-	"....h...h",
-	"",
-	"oooooooooo",
-	"oooooooooo.hh",
-	"oonnonnooo...h",
-	"onnnnnnnoo...h",
-	"oonnnnnooo...h",
-	"ooonnnoooo.hh",
-	"oooonooooo",
-	"oooooooooo",
-	".oooooooo",
-];
-
-const BOWL = [
-	".....nn.n.nn",
-	"...nnnnnnnnnnnn",
-	"ooooooooooooooooooo",
-	".oooonooooooooonoo",
-	".ooonnnnnnnnnnnnoo",
-	"..oooonooooooonoo",
-	"...ooooooooooooo",
-];
-
-const GLASS = [
-	"oooooooo",
-	"oooooooo",
-	"oooooooo",
-	"oooooooo",
-	"dddddddd",
-	"dwdddddd",
-	"dwdddddd",
-	"dwdddddd",
-	"dwdddddd",
-	"dddddddd",
-	"dddddddd",
-	".dddddd",
-	".dddddd",
-];
-
-const CAKE = [
-	"....h....h....h",
-	"...hh...hh...hh",
-	"...hh...hh...hh",
-	"",
-	"...o....o....o",
-	"...o....o....o",
-	"nnnnnnnnnnnnnnnnn",
-	"nnonnnonnnnonnnon",
-	"onoonooonoonoooon",
-	"ooooooooooooooooo",
-	"ddddddddddddddddd",
-	"ooooooooooooooooo",
-	"ooooooooooooooooo",
-];
-
-// The star on top is drawn by the frame.
-const TREE = [
-	"........d",
-	".......ddd",
-	"......ddwdd",
-	".....ddddddd",
-	"......ddddd",
-	".....dwddddd",
-	"....ddddddwdd",
-	".....ddddddd",
-	"....ddwdddddd",
-	"...dddddddwddd",
-	"..ddddddddddddd",
-	".dwddddddddddwdd",
-	"......nnnn",
-	"......nnnn",
-];
-
-const GIFT = [
-	"..hh...hh",
-	"...hh.hh",
-	".....h",
-	"ooooonooooo",
-	"ooooonooooo",
-	"nnnnnnnnnnn",
-	"ooooonooooo",
-	"ooooonooooo",
-	"ooooonooooo",
-	"ooooonooooo",
-];
-
-const FLAG = [
-	"hhhhhh",
-	"hddddh",
-	"hddddh",
-	"hhhhhh",
-	"h",
-	"h",
-	"h",
-];
-
-// ---------------------------------------------------------------------------------------------------------
 // Words wrapped to a width, as the editor does it (text.js).
 // ---------------------------------------------------------------------------------------------------------
 
@@ -319,55 +145,6 @@ function wrap(text, width, measure) {
 }
 
 // ---------------------------------------------------------------------------------------------------------
-// Cells: layers of sprites put together, outlined, and drawn.
-// ---------------------------------------------------------------------------------------------------------
-
-const SOLID = new Set("oenw#dl");
-
-/** Layers ({ rows, x, y }) on one grid, the later ones over the earlier ones, with a free cell all around. */
-function compose(layers) {
-	let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-	for (const { rows, x = 0, y = 0 } of layers) {
-		minX = Math.min(minX, x);
-		minY = Math.min(minY, y);
-		maxX = Math.max(maxX, x + Math.max(...rows.map((row) => row.length)));
-		maxY = Math.max(maxY, y + rows.length);
-	}
-	const cells = Array.from({ length: maxY - minY + 2 }, () => Array(maxX - minX + 2).fill("."));
-	for (const { rows, x = 0, y = 0 } of layers) {
-		rows.forEach((row, rowIndex) => {
-			[...row].forEach((cell, column) => {
-				if (cell !== ".") {
-					cells[rowIndex + y - minY + 1][column + x - minX + 1] = cell;
-				}
-			});
-		});
-	}
-	return cells;
-}
-
-function neighbours(cells, x, y) {
-	return [cells[y - 1]?.[x], cells[y + 1]?.[x], cells[y][x - 1], cells[y][x + 1]];
-}
-
-/** The outline around everything solid. */
-function outline(cells) {
-	const lined = cells.map((row) => [...row]);
-	cells.forEach((row, y) => {
-		row.forEach((cell, x) => {
-			if (cell === "." && neighbours(cells, x, y).some((other) => SOLID.has(other))) {
-				lined[y][x] = "L";
-			}
-		});
-	});
-	return lined;
-}
-
-function mirror(cells) {
-	return cells.map((row) => [...row].reverse());
-}
-
-// ---------------------------------------------------------------------------------------------------------
 // Luli: a cartoon with flat tones in dots, in poses. Put her in a frame with p.luli(pose, options):
 //
 //   p.luli("peek")                                   peeking over the bottom edge, in the middle
@@ -384,9 +161,12 @@ function mirror(cells) {
 // Options:
 //   scale     her size (1: about 330 px tall peeking)
 //   flip      mirrored, e.g. to come in from the right edge, or face left
-//   eyes      "open", "happy" ◠, "closed" ◡, "sleepy", "wink" or "puppy"
-//   mouth     "smile", "tongue" or "o"
-//   over      peek only: what she peeks over, "heart", "sign" (blank, for a message) or "gift"
+//   eyes      "open", "happy" ◠, "closed" ◡, "sleepy", "wink", "oneOpen" (the other ◡) or "puppy"
+//   mouth     "smile", "tongue", "o" or "yawn"
+//   over      peek only: what she peeks over, "heart", "sign" (blank, for a message), "gift", "mug" (she's
+//             in it), "cake" or "blanket" (tucked in, her head on a pillow)
+//   hat       from the front: "party", "night" (a nightcap) or "santa"
+//   glasses   from the front: sunglasses, true or false
 //   holding   in her mouth, side-on poses: "heart" or "letter"
 //   night     a white outline, for black backgrounds
 //   halo      follows the page's checkbox unless given
@@ -430,6 +210,25 @@ function heartPath(x, y, width) {
 		path.bezierCurveTo(x - s * 0.95, y - s * 0.95, x - s * 0.2, y - s * 1.05, x, y - s * 0.45);
 		path.bezierCurveTo(x + s * 0.2, y - s * 1.05, x + s * 0.95, y - s * 0.95, x + s, y - s * 0.35);
 		path.bezierCurveTo(x + s * 1.05, y + s * 0.05, x + s * 0.55, y + s * 0.4, x, y + s * 0.85);
+		path.closePath();
+	});
+}
+
+/** An ellipse with a hole in it, `thickness` wide all round. */
+function ringPath(x, y, rx, ry, thickness) {
+	return pathOf((path) => {
+		path.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+		path.moveTo(x + rx - thickness, y);
+		path.ellipse(x, y, rx - thickness, ry - thickness, 0, Math.PI * 2, 0, true);
+	});
+}
+
+/** A candle flame standing on (x, y). */
+function flamePath(x, y, size) {
+	return pathOf((path) => {
+		path.moveTo(x, y - size * 2.3);
+		path.bezierCurveTo(x + size * 0.3, y - size * 1.3, x + size, y - size * 0.7, x, y);
+		path.bezierCurveTo(x - size, y - size * 0.7, x - size * 0.3, y - size * 1.3, x, y - size * 2.3);
 		path.closePath();
 	});
 }
@@ -615,8 +414,65 @@ const FRONT = (() => {
 	};
 })();
 
-/** Her head from the front. `ears`: "down", "splayed" (lying flat out to the sides) or "up". */
-function drawFrontHead(kit, { eyes = "open", mouth = "smile", ears = "down", halo = true, haloAt = [0, -127, 80] }) {
+// Looks with one eye open: what the other one does (and the one we see side-on).
+const ONE_EYE = { wink: "happy", oneOpen: "closed" };
+
+/** Sunglasses over her eyes, from the front. */
+function drawSunglasses(kit) {
+	for (const side of SIDES) {
+		kit.solid(rectPath(52 * side - 42, -36, 84, 56, [10, 10, 30, 30]));
+		kit.stroke(pathOf((path) => {
+			path.moveTo(52 * side - 26, -24);
+			path.lineTo(52 * side - 10, -24);
+		}), 5, WHITE);
+	}
+	kit.stroke(pathOf((path) => {
+		path.moveTo(-12, -26);
+		path.quadraticCurveTo(0, -34, 12, -26);
+	}), 7, BLACK);
+}
+
+/** A hat on top of her head, from the front: "party", "night" (a nightcap) or "santa". */
+function drawHat(kit, kind) {
+	if (kind === "party") {
+		kit.at(24, -80, 0.22, () => {
+			const cone = pathOf((path) => {
+				path.moveTo(-54, 0);
+				path.lineTo(0, -130);
+				path.lineTo(54, 0);
+				path.quadraticCurveTo(0, 14, -54, 0);
+				path.closePath();
+			});
+			kit.part(cone, 1);
+			kit.inside(cone, () => {
+				for (const y of [-24, -64, -102]) kit.part(rectPath(-70, y - 10, 140, 20), DARK, false);
+			});
+			kit.stroke(cone);
+			kit.part(circlePath(0, -134, 17), MUZZLE);
+		});
+		return;
+	}
+	// A floppy cap, its tip falling to one side with a pompom, a band round the bottom.
+	const cap = pathOf((path) => {
+		path.moveTo(-86, -84);
+		path.bezierCurveTo(-96, -160, 10, -200, 80, -172);
+		path.bezierCurveTo(132, -150, 162, -110, 172, -44);
+		path.bezierCurveTo(142, -92, 112, -112, 86, -84);
+		path.closePath();
+	});
+	kit.part(cap, kind === "santa" ? 0.3 : 0.72);
+	if (kind === "night") {
+		for (const [x, y, r] of [[-34, -128, 13], [36, -152, 10], [104, -122, 11]]) kit.solid(starPath(x, y, r, 0.4));
+	}
+	kit.part(rectPath(-100, -104, 200, 38, 19), 1);
+	kit.part(circlePath(172, -38, 22), 1);
+}
+
+/**
+ * Her head from the front. `ears`: "down", "splayed" (lying flat out to the sides) or "up"; `hat`: see
+ * drawHat; `glasses`: sunglasses.
+ */
+function drawFrontHead(kit, { eyes = "open", mouth = "smile", ears = "down", hat = null, glasses = false, halo = true, haloAt = [0, -127, 80] }) {
 	if (ears === "up") {
 		for (const ear of FRONT.ears) kit.part(ear.up, DARK);
 	}
@@ -630,15 +486,16 @@ function drawFrontHead(kit, { eyes = "open", mouth = "smile", ears = "down", hal
 	kit.part(FRONT.muzzle, MUZZLE, 70);
 	for (const brow of FRONT.brows) kit.part(brow, MUZZLE, false);
 	for (const side of SIDES) {
-		drawEye(kit, 52 * side, -10, eyes === "wink" ? (side < 0 ? "open" : "happy") : eyes);
+		drawEye(kit, 52 * side, -10, eyes in ONE_EYE ? (side < 0 ? "open" : ONE_EYE[eyes]) : eyes);
 	}
+	if (glasses) drawSunglasses(kit);
 	kit.solid(FRONT.nose);
 	kit.solid(FRONT.noseShine, WHITE);
 	if (mouth === "tongue") kit.part(FRONT.tongue, TONGUE, true, BLACK);
 	kit.stroke(pathOf((path) => {
 		path.moveTo(0, 129);
-		path.lineTo(0, mouth === "o" ? 135 : 141);
-		if (mouth !== "o") {
+		path.lineTo(0, mouth === "o" || mouth === "yawn" ? 135 : 141);
+		if (mouth !== "o" && mouth !== "yawn") {
 			path.moveTo(-20, 145);
 			path.quadraticCurveTo(-8, 149, 0, 141);
 			path.quadraticCurveTo(8, 149, 20, 145);
@@ -649,10 +506,17 @@ function drawFrontHead(kit, { eyes = "open", mouth = "smile", ears = "down", hal
 		}
 	}), 3.6, BLACK);
 	if (mouth === "o") kit.solid(ellipsePath(0, 146, 8, 10));
+	if (mouth === "yawn") {
+		const open = ellipsePath(0, 158, 22, 26);
+		kit.part(open, 0);
+		kit.inside(open, () => kit.part(ellipsePath(0, 176, 16, 10), TONGUE, false));
+	}
+	// The halo goes behind a party hat, and floats over a cap.
 	if (halo) {
-		const [x, y, rx] = haloAt;
+		const [x, y, rx] = hat && hat !== "party" ? [0, -206, 70] : haloAt;
 		kit.stroke(ellipsePath(x, y, rx, rx * 0.21), LULI_LINE * 1.5);
 	}
+	if (hat) drawHat(kit, hat);
 }
 
 // A front paw, its top in the middle at the origin, hanging down (over an edge).
@@ -702,8 +566,68 @@ function drawProp(kit, kind) {
 		kit.part(rectPath(-24, -20, 48, 200), DARK);
 		kit.part(rectPath(-170, 50, 340, 44), DARK);
 		kit.stroke(box);
+	} else if (kind === "mug") {
+		// The handle, then the cup in front of it, with a heart on it.
+		kit.part(ringPath(232, 100, 76, 86, 30), 1);
+		kit.part(pathOf((path) => {
+			path.moveTo(-222, -24);
+			path.lineTo(222, -24);
+			path.lineTo(206, 220);
+			path.quadraticCurveTo(202, 272, 150, 272);
+			path.lineTo(-150, 272);
+			path.quadraticCurveTo(-202, 272, -206, 220);
+			path.closePath();
+		}), 1);
+		kit.part(heartPath(0, 140, 116), 0.3);
+	} else if (kind === "cake") {
+		// A candle either side of her, then the cake, with icing dripping down its top.
+		for (const side of SIDES) {
+			kit.part(rectPath(178 * side - 10, -100, 20, 84, 5), MUZZLE);
+			kit.part(flamePath(178 * side, -106, 15), 1);
+		}
+		const cake = rectPath(-232, -24, 464, 230, 16);
+		kit.part(cake, 0.62);
+		kit.inside(cake, () => {
+			kit.part(pathOf((path) => {
+				path.moveTo(-240, -40);
+				path.lineTo(240, -40);
+				for (let i = 0, x = 240; x > -240; i++, x -= 60) {
+					path.lineTo(x, 22);
+					path.bezierCurveTo(x - 4, i % 2 ? 54 : 84, x - 26, i % 2 ? 54 : 84, x - 30, 22);
+				}
+				path.closePath();
+			}), 1);
+			kit.part(rectPath(-240, 132, 480, 28), DARK);
+		});
+		kit.stroke(cake);
+	} else if (kind === "blanket") {
+		// A quilt up to her chin, in squares, its hem folded down along the top.
+		const quilt = rectPath(-800, 0, 1600, 600);
+		kit.part(quilt, MUZZLE, false);
+		kit.inside(quilt, () => {
+			for (let column = 0, x = -800; x < 800; column++, x += 110) {
+				for (let row = 0, y = 20; y < 600; row++, y += 110) {
+					if ((column + row) % 2) kit.part(rectPath(x, y, 110, 110), 0.6, false);
+				}
+			}
+		});
+		kit.part(rectPath(-800, -40, 1600, 64, 28), 1);
+		kit.dashed(pathOf((path) => {
+			path.moveTo(-800, -8);
+			path.lineTo(800, -8);
+		}), 3, [12, 9]);
 	}
 }
+
+/** A pillow behind her head, when she's tucked in. */
+const PILLOW = pathOf((path) => {
+	path.moveTo(-300, -330);
+	path.quadraticCurveTo(0, -350, 300, -330);
+	path.quadraticCurveTo(318, -170, 300, -10);
+	path.lineTo(-300, -10);
+	path.quadraticCurveTo(-318, -170, -300, -330);
+	path.closePath();
+});
 
 // Side-on, she's made of limbs: smooth tubes along curves through joints, each joint with its own
 // thickness ([x, y, radius]), so her outline is one flowing line, like a drawing. A pose is just where her
@@ -808,7 +732,7 @@ function drawSideHead(kit, { eyes = "open", mouth = "smile", holding = null, hal
 		kit.part(SIDE_HEAD.crown, DARK, false);
 	});
 	kit.part(SIDE_HEAD.brow, MUZZLE, false);
-	drawEye(kit, 27, -13, eyes === "wink" ? "happy" : eyes, 0.7);
+	drawEye(kit, 27, -13, ONE_EYE[eyes] ?? eyes, 0.7);
 	kit.solid(SIDE_HEAD.nose);
 	kit.solid(SIDE_HEAD.noseShine, WHITE);
 	if (mouth === "tongue") kit.part(SIDE_HEAD.tongue, TONGUE, true, BLACK);
@@ -960,6 +884,7 @@ const LULI_POSES = {
 	peek: {
 		anchor: [W / 2, H],
 		draw(kit, look) {
+			if (look.over === "blanket") kit.part(PILLOW, 1);
 			kit.above(0, () => {
 				kit.part(NECK, COAT);
 				kit.at(0, -185, 0, () => drawFrontHead(kit, { mouth: "tongue", ...look }));
@@ -1327,6 +1252,105 @@ function drawPolaroid(kit, x, y, w, h, bottom) {
 	drawPhotoSpot(kit, x, y, w, h);
 }
 
+/** A box w × h at (x, y) with round corners and a tail to `tip`, from the side nearest it: a speech bubble. */
+function bubblePath(x, y, w, h, [tx, ty], r = 26) {
+	const half = 20;
+	const side = ty > y + h ? "bottom" : ty < y ? "top" : tx > x + w ? "right" : "left";
+	// The tail leaves most of the way from the bubble's middle towards the tip, away from the corners.
+	const along = (from, length, tip) => {
+		const middle = from + length / 2;
+		return Math.min(Math.max(middle + (tip - middle) * 0.7, from + r + half), from + length - r - half);
+	};
+	const ax = along(x, w, tx);
+	const ay = along(y, h, ty);
+	return pathOf((path) => {
+		const tail = (edge, points) => edge === side && points.forEach((point) => path.lineTo(...point));
+		path.moveTo(x + r, y);
+		tail("top", [[ax - half, y], [tx, ty], [ax + half, y]]);
+		path.arcTo(x + w, y, x + w, y + r, r);
+		tail("right", [[x + w, ay - half], [tx, ty], [x + w, ay + half]]);
+		path.arcTo(x + w, y + h, x + w - r, y + h, r);
+		tail("bottom", [[ax + half, y + h], [tx, ty], [ax - half, y + h]]);
+		path.arcTo(x, y + h, x, y + h - r, r);
+		tail("left", [[x, ay + half], [tx, ty], [x, ay - half]]);
+		path.arcTo(x, y, x + r, y, r);
+		path.closePath();
+	});
+}
+
+/** A cloud to think or dream in, w × h at (x, y), with smaller and smaller puffs leading off to `tip`. */
+function drawThoughtBubble(kit, x, y, w, h, [tx, ty], tone = 1) {
+	const r = h * 0.25;
+	const cy = y + h / 2;
+	const puffs = [[[x + r * 0.9, cy, r * 1.1]], [[x + w - r * 0.9, cy, r * 1.1]]];
+	const across = Math.max(2, Math.round((w - 2 * r) / (r * 1.5)));
+	for (let i = 0; i <= across; i++) {
+		const px = x + r + ((w - 2 * r) * i) / across;
+		puffs.push([[px, y + r, r * (i % 2 ? 0.9 : 1.08)]], [[px, y + h - r, r * (i % 2 ? 1.08 : 0.9)]]);
+	}
+	kit.limb([...puffs, [[x + h / 2, cy, h / 2 - r * 0.3], [x + w - h / 2, cy, h / 2 - r * 0.3]]], tone);
+	const cx = x + w / 2;
+	const angle = Math.atan2(ty - cy, tx - cx);
+	const ex = cx + (Math.cos(angle) * w) / 2;
+	const ey = cy + (Math.sin(angle) * h) / 2;
+	for (const [t, size] of [[0.22, 0.4], [0.58, 0.27], [0.9, 0.16]]) {
+		kit.part(circlePath(ex + (tx - ex) * t, ey + (ty - ey) * t, r * size), tone);
+	}
+}
+
+/** Sun rays round (x, y), from r1 out to r2, long and short in turn. */
+function drawRays(kit, x, y, r1, r2, count = 16) {
+	kit.stroke(pathOf((path) => {
+		for (let i = 0; i < count; i++) {
+			const angle = (i / count) * Math.PI * 2;
+			const r = i % 2 ? r1 + (r2 - r1) * 0.65 : r2;
+			path.moveTo(x + Math.cos(angle) * r1, y + Math.sin(angle) * r1);
+			path.lineTo(x + Math.cos(angle) * r, y + Math.sin(angle) * r);
+		}
+	}), kit.lineWidth * 2);
+}
+
+/** A wisp of steam rising `height` from (x, y). */
+function drawSteam(kit, x, y, height) {
+	kit.stroke(pathOf((path) => {
+		for (let t = 0; t <= 1.001; t += 0.04) path.lineTo(x + Math.sin(t * Math.PI * 2.4) * 12, y - t * height);
+	}));
+}
+
+/** The puffs of a fluffy cloud `w` wide, its middle at x and its flat bottom along `bottom`, as limbs. */
+function cloudPuffs(x, bottom, w) {
+	const puffs = [[-0.38, -0.12, 0.12], [-0.21, -0.2, 0.16], [0.01, -0.25, 0.19], [0.22, -0.2, 0.16], [0.38, -0.12, 0.12]];
+	return [
+		[[x - 0.38 * w, bottom - 0.12 * w, 0.12 * w], [x + 0.38 * w, bottom - 0.12 * w, 0.12 * w]],
+		...puffs.map(([dx, dy, r]) => [[x + dx * w, bottom + dy * w, r * w]]),
+	];
+}
+
+/** An alarm clock with its face's middle at (x, y), fast asleep. */
+function drawAlarmClock(kit, x, y, r) {
+	for (const side of SIDES) {
+		kit.limb([[x + side * r * 0.55, y + r * 0.7, r * 0.1], [x + side * r * 0.8, y + r * 1.18, r * 0.08]], DARK);
+		kit.at(x + side * r * 0.68, y - r * 0.82, side * 0.6, () => {
+			kit.part(pathOf((path) => {
+				path.ellipse(0, 0, r * 0.4, r * 0.34, 0, Math.PI, 0);
+				path.closePath();
+			}), MUZZLE);
+		});
+	}
+	kit.part(rectPath(x - r * 0.07, y - r * 1.24, r * 0.14, r * 0.34, 4), DARK);
+	kit.part(circlePath(x, y, r), 0.3);
+	kit.part(circlePath(x, y, r * 0.8), 1);
+	kit.stroke(pathOf((path) => {
+		for (let i = 0; i < 12; i += 3) {
+			const angle = (i / 12) * Math.PI * 2;
+			path.moveTo(x + Math.cos(angle) * r * 0.62, y + Math.sin(angle) * r * 0.62);
+			path.lineTo(x + Math.cos(angle) * r * 0.72, y + Math.sin(angle) * r * 0.72);
+		}
+	}), kit.lineWidth * 0.8);
+	for (const side of SIDES) drawEye(kit, x + side * r * 0.26, y - r * 0.06, "closed", r / 70);
+	kit.solid(ellipsePath(x, y + r * 0.3, r * 0.08, r * 0.1));
+}
+
 // ---------------------------------------------------------------------------------------------------------
 // The painter: what the frames draw with. Everything is drawn smooth on the canvas, then made 1 bit.
 // ---------------------------------------------------------------------------------------------------------
@@ -1343,9 +1367,7 @@ function painter(g, options) {
 		rows.forEach((row, y) => [...row].forEach((bit, x) => bit === "1" && tileContext.fillRect(x, y, 1, 1)));
 		return g.createPattern(canvas, "repeat");
 	};
-	const dots = { half: tile(["10", "01"]), light: tile(["10", "00"]), dark: tile(["11", "10"]) };
-	// Luli was brown: half dots, with darker (black) ears.
-	const coat = { o: dots.half, e: BLACK };
+	const dots = { half: tile(["10", "01"]) };
 
 	const shape = (color, draw) => {
 		g.fillStyle = color;
@@ -1356,7 +1378,6 @@ function painter(g, options) {
 
 	const p = {
 		her: options.her.trim() || "meu amor",
-		dots,
 
 		fill(color) {
 			g.fillStyle = color;
@@ -1410,47 +1431,6 @@ function painter(g, options) {
 			return y + lines.length * step;
 		},
 
-		/**
-		 * Sprite layers drawn `scale` px per cell, with the middle of their solid cells at `cx` and their
-		 * bottom at `bottom`. `line` is the outline's color, `coat` the dog's colors.
-		 */
-		sprite(layers, { cx, bottom, scale, flip = false, line = BLACK, halo = line, coat = null }) {
-			let cells = outline(compose(typeof layers[0] === "string" ? [{ rows: layers }] : layers));
-			if (flip) {
-				cells = mirror(cells);
-			}
-			let minX = Infinity, maxX = -Infinity, maxY = -Infinity;
-			cells.forEach((row, y) => row.forEach((cell, x) => {
-				if (cell !== "." && cell !== "a") {
-					minX = Math.min(minX, x);
-					maxX = Math.max(maxX, x);
-					maxY = Math.max(maxY, y);
-				}
-			}));
-			const left = Math.round(cx - ((minX + maxX + 1) * scale) / 2);
-			const top = Math.round(bottom - (maxY + 1) * scale);
-			const colors = {
-				o: coat?.o ?? WHITE, e: coat?.e ?? BLACK, n: BLACK, "#": BLACK, w: WHITE, W: WHITE,
-				d: dots.half, l: dots.light, h: line, a: halo, L: line,
-			};
-			cells.forEach((row, y) => row.forEach((cell, x) => {
-				if (cell !== ".") {
-					g.fillStyle = colors[cell];
-					g.fillRect(left + x * scale, top + y * scale, scale, scale);
-				}
-			}));
-		},
-
-		/** The pixel dog, in a pose (`standing` or `sleeping`), with her halo if the page asks for it. */
-		dog(pose, { glasses = false, happy = false, line = BLACK, haloColor = line, ...place }) {
-			const dog = DOG[pose];
-			const layers = [{ rows: dog.rows }];
-			if (glasses) layers.push({ rows: GLASSES, x: dog.glasses[0], y: dog.glasses[1] });
-			if (happy) layers.push({ rows: HAPPY, x: dog.happy[0], y: dog.happy[1] });
-			if (options.halo) layers.push({ rows: HALO, x: dog.halo[0], y: dog.halo[1] });
-			p.sprite(layers, { ...place, line, halo: haloColor, coat });
-		},
-
 		/** Luli in a pose, with options: see LULI_POSES. */
 		luli(pose = "peek", place = {}) {
 			g.drawImage(drawLuli(pose, { halo: options.halo, ...place }), 0, 0);
@@ -1473,25 +1453,6 @@ function painter(g, options) {
 			return g.measureText(words).width;
 		},
 
-		/** A cloud on a flat bottom, `width` wide, with its middle at `cx`. */
-		cloud(cx, bottom, width, { fill = WHITE, line = BLACK, lineWidth = 5 } = {}) {
-			const puffs = [[-0.33, -0.16, 0.16], [-0.13, -0.27, 0.2], [0.12, -0.29, 0.22], [0.33, -0.17, 0.16]];
-			const draw = (color, grow) => {
-				for (const [dx, dy, r] of puffs) p.circle(cx + dx * width, bottom + dy * width, r * width + grow, color);
-				p.rect(cx - 0.33 * width - grow, bottom - 0.2 * width - grow, 0.66 * width + 2 * grow, 0.2 * width + 2 * grow, color);
-			};
-			draw(line, lineWidth);
-			draw(fill, 0);
-		},
-		/** A sun; a `rising` one has rays only above the horizon at `y`. */
-		sun(x, y, r, { color = BLACK, rays = 12, bg = WHITE, rising = false } = {}) {
-			for (let i = rising ? 1 : 0; i < rays; i++) {
-				const angle = rising ? Math.PI + (i / rays) * Math.PI : (i / rays) * Math.PI * 2;
-				p.line(x + Math.cos(angle) * (r + 14), y + Math.sin(angle) * (r + 14), x + Math.cos(angle) * (r + 38), y + Math.sin(angle) * (r + 38), 7, color);
-			}
-			p.circle(x, y, r, color);
-			p.circle(x, y, r - 7, bg === WHITE ? dots.light : bg);
-		},
 		moon(x, y, r, color = WHITE, bg = BLACK) {
 			p.circle(x, y, r, color);
 			p.circle(x + r * 0.45, y - r * 0.3, r * 0.82, bg);
@@ -1507,15 +1468,6 @@ function painter(g, options) {
 				g.quadraticCurveTo(x - k, y - k, x, y - r);
 			});
 		},
-		star(x, y, r, color = BLACK) {
-			shape(color, () => {
-				for (let i = 0; i < 10; i++) {
-					const angle = -Math.PI / 2 + (i * Math.PI) / 5;
-					const radius = i % 2 === 0 ? r : r * 0.45;
-					g.lineTo(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius);
-				}
-			});
-		},
 		heart(x, y, width, color = BLACK) {
 			g.fillStyle = color;
 			g.fill(heartPath(x, y, width));
@@ -1523,17 +1475,6 @@ function painter(g, options) {
 		heartOutline(x, y, width, lineWidth, color = BLACK, bg = WHITE) {
 			p.heart(x, y, width, color);
 			p.heart(x, y + lineWidth * 0.3, width - lineWidth * 2.6, bg);
-		},
-		/** A paw print, its toes pointing `angle` radians clockwise from up. */
-		paw(x, y, size, angle = 0, color = BLACK) {
-			g.save();
-			g.translate(x, y);
-			g.rotate(angle);
-			shape(color, () => g.ellipse(0, size * 0.2, size * 0.3, size * 0.24, 0, 0, Math.PI * 2));
-			for (const [dx, dy] of [[-0.38, -0.12], [-0.14, -0.36], [0.14, -0.36], [0.38, -0.12]]) {
-				shape(color, () => g.ellipse(dx * size, dy * size, size * 0.13, size * 0.17, dx * 0.9, 0, Math.PI * 2));
-			}
-			g.restore();
 		},
 		firework(x, y, r, color = BLACK) {
 			for (let i = 0; i < 14; i++) {
@@ -1588,21 +1529,6 @@ function painter(g, options) {
 				}
 			}
 		},
-		/** A dog bed drawn in outline, `width` wide, its middle at `cx`. */
-		bed(cx, bottom, width, height, color = BLACK) {
-			g.strokeStyle = color;
-			g.lineWidth = 5;
-			g.beginPath();
-			g.roundRect(cx - width / 2, bottom - height, width, height, height / 2);
-			g.stroke();
-			g.lineWidth = 3;
-			g.beginPath();
-			g.roundRect(cx - width / 2 + 16, bottom - height + 14, width - 32, height - 22, height / 2 - 12);
-			g.stroke();
-		},
-		ground(y, color = BLACK) {
-			p.rect(40, y, W - 80, 4, color);
-		},
 	};
 	return p;
 }
@@ -1627,12 +1553,9 @@ const KINDS = [
 	["luli", "Luli"],
 	["photo", "With a photo"],
 	["anytime", "Anytime"],
-	["morning", "Morning"],
-	["work", "Work"],
-	["lunch", "Lunch"],
-	["afternoon", "Afternoon"],
-	["evening", "Evening"],
-	["night", "Night"],
+	["morning", "Morning · 06:00"],
+	["evening", "Evening · 18:00"],
+	["night", "Night · 21:00"],
 	["dates", "Special dates"],
 	["week", "Days of the week"],
 ];
@@ -1658,6 +1581,14 @@ const LULI_TEMPLATES = [
 	{ id: "over-heart", title: "Peeking over a heart", calls: [["peek", { y: 250, scale: 0.75, over: "heart" }]] },
 	{ id: "over-sign", title: "Peeking over a sign, for a message", calls: [["peek", { y: 250, scale: 0.75, over: "sign" }]] },
 	{ id: "over-gift", title: "Peeking over a gift", calls: [["peek", { y: 260, scale: 0.75, over: "gift" }]] },
+	{ id: "over-mug", title: "In a mug", calls: [["peek", { y: 290, scale: 0.6, over: "mug" }]] },
+	{ id: "over-cake", title: "Behind a cake", calls: [["peek", { y: 320, scale: 0.65, over: "cake" }]] },
+	{ id: "blanket", title: "Tucked in, her head on a pillow", calls: [["peek", { y: 420, scale: 0.6, over: "blanket", eyes: "closed", mouth: "smile" }]] },
+	{
+		id: "hats", title: "Hats: party, night, santa", shown: 'p.luli("peek", { hat: "party" })',
+		calls: ["party", "night", "santa"].map((hat, i) => ["peek", { x: 133 + i * 267, scale: 0.6, hat }]),
+	},
+	{ id: "glasses", title: "Sunglasses", calls: [["peek", { glasses: true }]] },
 	{ id: "standing", title: "Standing, side-on", calls: [["standing"]] },
 	{ id: "sausage", title: "A long sausage along the bottom", calls: [["sausage"]] },
 	{ id: "sitting", title: "Sitting in a corner, looking up", calls: [["sitting", { x: 590, flip: true }]] },
@@ -1666,14 +1597,14 @@ const LULI_TEMPLATES = [
 	{ id: "trotting-heart", title: "Trotting in with a heart", calls: [["trotting"]] },
 	{ id: "trotting-letter", title: "Trotting in with a letter", calls: [["trotting", { holding: "letter" }]] },
 	{
-		id: "eyes", title: "Eyes: open, happy, closed; sleepy, wink, puppy", shown: 'p.luli("peek", { eyes: "happy" })',
-		calls: ["open", "happy", "closed", "sleepy", "wink", "puppy"].map((eyes, i) => (
-			["peek", { x: 133 + (i % 3) * 267, y: i < 3 ? 240 : H, scale: 0.6, eyes }]
+		id: "eyes", title: "Eyes: open, happy, closed, sleepy; wink, oneOpen, puppy", shown: 'p.luli("peek", { eyes: "happy" })',
+		calls: ["open", "happy", "closed", "sleepy", "wink", "oneOpen", "puppy"].map((eyes, i) => (
+			["peek", { x: i < 4 ? 100 + i * 200 : 200 + (i - 4) * 200, y: i < 4 ? 240 : H, scale: 0.5, eyes }]
 		)),
 	},
 	{
-		id: "mouths", title: "Mouths: smile, tongue, o", shown: 'p.luli("peek", { mouth: "o" })',
-		calls: ["smile", "tongue", "o"].map((mouth, i) => ["peek", { x: 133 + i * 267, scale: 0.8, mouth }]),
+		id: "mouths", title: "Mouths: smile, tongue, o, yawn", shown: 'p.luli("peek", { mouth: "o" })',
+		calls: ["smile", "tongue", "o", "yawn"].map((mouth, i) => ["peek", { x: 100 + i * 200, scale: 0.6, mouth }]),
 	},
 ];
 
@@ -1875,25 +1806,24 @@ const FRAMES = [
 		},
 	},
 
+	// Mornings: the 06:00 block, before she leaves.
 	{
-		id: "bom-dia", kind: "morning", title: "Good morning, with the sunrise", when: "Every day · 06:00",
+		id: "bom-dia-sol", kind: "morning", title: "Good morning: Luli rises like the sun", when: "Every day · 06:00",
 		draw(p) {
-			p.text(`Bom dia, ${p.her}!`, { y: 28, size: 64 });
-			p.text("Que hoje seja um dia leve.", { y: 118, size: 40 });
-			p.sun(620, 424, 62, { rising: true, rays: 8 });
-			p.rect(0, 424, W, H - 424, WHITE);
-			p.ground(424);
-			p.dog("standing", { cx: 300, bottom: 426, scale: 6, happy: true });
-		},
-	},
-	{
-		id: "acorda", kind: "morning", title: "Wake up, coffee's ready", when: "Weekdays · 06:00",
-		draw(p) {
-			p.text("Acorda, dorminhoca!", { y: 28, size: 64 });
-			p.text("O café já está te esperando.", { y: 118, size: 40 });
-			p.ground(430);
-			p.dog("standing", { cx: 290, bottom: 432, scale: 6 });
-			p.sprite(MUG, { cx: 610, bottom: 432, scale: 10 });
+			p.decor((kit) => {
+				kit.above(400, () => drawRays(kit, 220, 262, 150, 206));
+				kit.stroke(pathOf((path) => {
+					path.moveTo(0, 400);
+					path.lineTo(W, 400);
+					for (const [x, y, length] of [[120, 426, 90], [300, 440, 140], [560, 428, 120], [690, 452, 60]]) {
+						path.moveTo(x, y);
+						path.lineTo(x + length, y);
+					}
+				}));
+			});
+			p.luli("peek", { x: 220, y: 400, scale: 0.75, eyes: "happy" });
+			const bottom = p.text(`Bom dia, ${p.her}!`, { x: 600, y: 70, size: 64, width: 360 });
+			p.text("Que hoje seja um dia leve.", { x: 600, y: bottom + 12, size: 40, width: 320 });
 		},
 	},
 	{
@@ -1909,139 +1839,223 @@ const FRAMES = [
 		},
 	},
 	{
-		id: "torcendo", kind: "work", title: "Cheering you on", when: "Weekdays · 09:00",
+		id: "cinco-minutos", kind: "morning", title: "Five more minutes, tucked in", when: "Weekdays · 06:00",
 		draw(p) {
-			p.text("Bom trabalho!", { y: 28, size: 64 });
-			p.text("Estou torcendo por você.", { y: 118, size: 40 });
-			p.ground(440);
-			p.dog("standing", { cx: 400, bottom: 442, scale: 6, happy: true });
-			p.sparkle(170, 300, 18);
-			p.sparkle(630, 280, 22);
-			p.sparkle(680, 370, 12);
-			p.sparkle(120, 390, 12);
+			const bottom = p.text("Só mais 5 minutinhos?", { y: 20, size: 64, width: 740 });
+			p.text("Bom dia, dorminhoca.", { y: bottom, size: 40 });
+			p.luli("peek", { y: 410, scale: 0.56, over: "blanket", eyes: "sleepy", mouth: "smile", hat: "night" });
+			p.zzz(600, 226);
 		},
 	},
 	{
-		id: "voce-consegue", kind: "work", title: "You can do it, one step at a time", when: "Weekdays · 09:00",
+		id: "cafe", kind: "morning", title: "Coffee first: Luli in a mug", when: "Weekdays · 06:00",
 		draw(p) {
-			p.text("Você consegue!", { y: 40, size: 64 });
-			p.text("Um passo de cada vez.", { y: 130, size: 40 });
-			for (let i = 0; i < 5; i++) {
-				p.paw(70 + i * 84, i % 2 ? 392 : 424, 40, Math.PI / 2);
-			}
-			p.dog("standing", { cx: 620, bottom: 440, scale: 5 });
+			const bottom = p.text("Primeiro, café.", { x: 50, y: 110, size: 64, align: "left", width: 360 });
+			p.text("Depois a gente conquista o mundo.", { x: 50, y: bottom + 12, size: 40, align: "left", width: 360 });
+			p.decor((kit) => {
+				for (const [x, height] of [[478, 70], [700, 90]]) drawSteam(kit, x, 286, height);
+				drawTwinkles(kit, 760, 90, 18);
+			});
+			p.luli("peek", { x: 590, y: 300, scale: 0.6, over: "mug", eyes: "happy" });
 		},
 	},
 	{
-		id: "respira", kind: "work", title: "Breathe, it's fine", when: "Weekdays · 15:00",
+		id: "antes-de-sair", kind: "morning", title: "Before you leave: a checklist", when: "Weekdays · 06:00",
 		draw(p) {
-			const bottom = p.text("Respira fundo.", { y: 30, size: 64 });
-			p.text("Você dá conta de tudo. E se hoje não der, tudo bem também.", { y: bottom + 6, size: 40, width: 660 });
-			p.cloud(120, 330, 150);
-			p.cloud(690, 300, 120);
-			p.ground(440);
-			p.dog("sleeping", { cx: 400, bottom: 442, scale: 6 });
+			const items = ["Chaves", "Celular", "Garrafinha", "Um beijo meu"];
+			const top = (i) => 152 + i * 66;
+			p.decor((kit) => {
+				kit.part(rectPath(52, 52, 400, 392, 6), 0.45, false);
+				kit.part(rectPath(40, 40, 400, 392, 6), 1);
+				kit.at(240, 42, -0.06, () => kit.part(rectPath(-62, -18, 124, 36, 3), MUZZLE));
+				items.forEach((item, i) => {
+					if (i < items.length - 1) {
+						kit.part(rectPath(76, top(i), 36, 36, 6), 1);
+					} else {
+						kit.part(heartPath(94, top(i) + 20, 42), 0.3);
+					}
+				});
+			});
+			p.text("Antes de sair:", { x: 76, y: 72, size: 40, align: "left" });
+			items.forEach((item, i) => p.text(item, { x: 132, y: top(i) - 6, size: 40, align: "left" }));
+			p.luli("sitting", { x: 650, scale: 0.85, flip: true, eyes: "happy" });
 		},
 	},
 	{
-		id: "almoco", kind: "lunch", title: "Lunch break, eat well", when: "Every day · 12:00",
+		id: "leva-meu-coracao", kind: "morning", title: "Take my heart with you today", when: "Weekdays · 06:00",
 		draw(p) {
-			p.text("Hora do almoço!", { y: 28, size: 64 });
-			p.text("Pausa merecida. Come direitinho!", { y: 118, size: 40 });
-			p.ground(430);
-			p.dog("standing", { cx: 300, bottom: 432, scale: 6, happy: true });
-			p.sprite(BOWL, { cx: 610, bottom: 432, scale: 10 });
+			const bottom = p.text("Leva meu coração", { x: 760, y: 40, size: 64, align: "right" });
+			p.text("com você hoje.", { x: 760, y: bottom + 8, size: 40, align: "right" });
+			p.decor((kit) => {
+				for (const [x, y, size] of [[456, 290, 28], [506, 254, 22], [548, 228, 16]]) kit.part(heartPath(x, y, size), 0.3);
+				drawTwinkles(kit, 700, 400, 20);
+				drawTwinkles(kit, 110, 110, 16);
+			});
+			p.luli("trotting", { x: 210, y: 470, scale: 0.72 });
 		},
 	},
 	{
-		id: "agua", kind: "lunch", title: "Have you had water today?", when: "Every day · 12:00 or 15:00",
+		id: "segunda", kind: "week", title: "Monday again: Luli flat out", when: "Mondays · 06:00",
 		draw(p) {
-			p.text("Já bebeu água hoje?", { y: 28, size: 64 });
-			p.text("Bebe uma aguinha, vai.", { y: 118, size: 40 });
-			p.ground(430);
-			p.dog("standing", { cx: 300, bottom: 432, scale: 6 });
-			p.sprite(GLASS, { cx: 610, bottom: 432, scale: 11 });
+			p.text("Segunda-feira de novo?", { x: 50, y: 40, size: 64, align: "left", width: 520 });
+			p.decor((kit) => kit.part(bubblePath(440, 230, 300, 84, [650, 340]), 1));
+			p.text("Nem me fala.", { x: 590, y: 244, size: 40 });
+			p.luli("sausage", { y: 470, scale: 0.9, eyes: "sleepy" });
+		},
+	},
+
+	// Evenings: the 18:00 block, when she gets home.
+	{
+		id: "chegou", kind: "evening", title: "You're home: hanging from the sign", when: "Weekdays · 18:00",
+		draw(p) {
+			p.decor((kit) => {
+				for (const x of [250, 550]) {
+					kit.stroke(pathOf((path) => {
+						path.moveTo(x, -10);
+						path.lineTo(x, 64);
+					}), 3);
+				}
+				kit.part(rectPath(160, 46, 480, 128, 14), 1);
+				for (const x of [250, 550]) kit.solid(circlePath(x, 62, 5));
+				drawTwinkles(kit, 120, 300, 22);
+				drawTwinkles(kit, 690, 280, 18);
+			});
+			p.text("Você chegou!", { y: 70, size: 64 });
+			p.luli("upsideDown", { y: 174, scale: 0.56 });
+			p.text("Que bom ter você em casa.", { y: 412, size: 40 });
 		},
 	},
 	{
-		id: "falta-pouco", kind: "afternoon", title: "Almost there", when: "Weekdays · 15:00",
+		id: "como-foi", kind: "evening", title: "How was your day? A speech bubble", when: "Weekdays · 18:00",
 		draw(p) {
-			p.text("Falta pouco!", { y: 34, size: 64 });
-			p.text("Você está indo muito bem.", { y: 124, size: 40 });
-			p.frameRect(80, 380, 600, 48, 5);
-			p.rect(88, 388, 432, 32, p.dots.half);
-			p.dog("standing", { cx: 470, bottom: 380, scale: 4, flip: false });
-			p.sprite(FLAG, { cx: 712, bottom: 428, scale: 8 });
+			p.decor((kit) => kit.part(bubblePath(40, 56, 500, 280, [596, 396]), 1));
+			const bottom = p.text("Como foi\no seu dia?", { x: 290, y: 80, size: 64 });
+			p.text("Me conta tudo.", { x: 290, y: bottom + 10, size: 40 });
+			p.luli("side", { x: W, y: 300, scale: 0.85, flip: true, eyes: "puppy" });
 		},
 	},
 	{
-		id: "pensando", kind: "afternoon", title: "Thinking of you", when: "Any day · 15:00",
+		id: "missao-cumprida", kind: "evening", title: "Mission accomplished, Luli as the underline", when: "Weekdays · 18:00",
 		draw(p) {
-			p.text("Pensando em você.", { y: 34, size: 64 });
-			p.text("Só passei pra dizer que te amo.", { y: 124, size: 40 });
-			p.ground(440);
-			p.dog("standing", { cx: 300, bottom: 442, scale: 6, happy: true });
-			p.heart(510, 300, 44);
-			p.heart(580, 240, 32);
-			p.heart(640, 196, 22);
+			const bottom = p.text("Missão cumprida!", { y: 90, size: 64 });
+			p.text("Agora é sofá, coberta e descanso.", { y: bottom + 6, size: 40, width: 560 });
+			p.luli("sausage", { y: 460, scale: 0.95 });
+			p.decor((kit) => {
+				drawTwinkles(kit, 90, 330, 22);
+				drawTwinkles(kit, 720, 300, 16);
+			});
 		},
 	},
 	{
-		id: "expediente", kind: "evening", title: "Work's over, sunset", when: "Weekdays · 18:00",
+		id: "abraco", kind: "evening", title: "Free hugs: Luli holds the sign", when: "Weekdays · 18:00",
 		draw(p) {
-			p.text("Acabou o expediente!", { y: 28, size: 64 });
-			p.text("Que orgulho de você. Agora descansa.", { y: 118, size: 40 });
-			p.circle(520, 440, 160);
-			for (let i = 0; i < 6; i++) p.rect(340, 428 - i * 22, 360, 12 - i * 2, WHITE);
-			p.rect(0, 440, W, H - 440, WHITE);
-			p.ground(440);
-			p.dog("standing", { cx: 210, bottom: 442, scale: 5 });
+			const bottom = p.text("Dia puxado?", { x: 40, y: 120, size: 64, align: "left" });
+			p.text("Vem cá, que eu resolvo.", { x: 40, y: bottom + 10, size: 40, align: "left", width: 360 });
+			p.luli("peek", { x: 610, y: 300, scale: 0.8, over: "sign", eyes: "happy" });
+			p.text("Abraço grátis", { x: 610, y: 340, size: 40 });
+			p.heart(610, 414, 30);
 		},
 	},
 	{
-		id: "boa-noite", kind: "night", title: "Good night, moon and stars", when: "Every day · 21:00",
-		draw(p) {
-			p.fill(BLACK);
-			p.moon(150, 140, 78);
-			for (const [x, y, r] of [[40, 50, 12], [250, 34, 9], [60, 300, 8], [250, 300, 13], [770, 310, 9], [120, 420, 10]]) p.sparkle(x, y, r, WHITE);
-			const bottom = p.text(`Boa noite, ${p.her}.`, { x: 520, y: 50, size: 64, width: 500, color: WHITE });
-			p.text("Durma bem. Te amo.", { x: 520, y: bottom + 6, size: 40, width: 500, color: WHITE });
-			p.dog("sleeping", { cx: 520, bottom: 440, scale: 5, line: WHITE });
-			p.zzz(668, 334, WHITE);
-		},
-	},
-	{
-		id: "bons-sonhos", kind: "night", title: "Sweet dreams, asleep on her bed", when: "Every day · 21:00",
-		draw(p) {
-			p.fill(BLACK);
-			for (const [x, y, r] of [[60, 60, 12], [740, 50, 10], [110, 300, 8], [700, 260, 14], [40, 420, 10], [760, 410, 8]]) p.sparkle(x, y, r, WHITE);
-			p.text("Bons sonhos.", { y: 40, size: 64, color: WHITE });
-			p.text("Que amanhã seja ainda melhor.", { y: 130, size: 40, color: WHITE });
-			p.bed(400, 452, 420, 80, WHITE);
-			p.dog("sleeping", { cx: 400, bottom: 432, scale: 5, line: WHITE });
-		},
-	},
-	{
-		id: "shhh", kind: "night", title: "Shhh, time to sleep", when: "Every day · 00:00 and 03:00",
-		draw(p) {
-			p.fill(BLACK);
-			p.moon(680, 110, 46);
-			for (const [x, y, r] of [[80, 70, 10], [560, 60, 8], [180, 200, 8], [740, 260, 10]]) p.sparkle(x, y, r, WHITE);
-			p.text("Shhh...", { y: 100, size: 64, color: WHITE });
-			p.text("Hora de dormir.", { y: 190, size: 40, color: WHITE });
-			p.dog("sleeping", { cx: 400, bottom: 430, scale: 4, line: WHITE });
-			p.zzz(500, 350, WHITE);
-		},
-	},
-	{
-		id: "aniversario", kind: "dates", title: "Her birthday", when: "Her birthday · all day",
+		id: "sextou", kind: "week", title: "Friday! In sunglasses", when: "Fridays · 18:00",
 		draw(p) {
 			p.bunting();
-			p.text("Feliz aniversário!", { y: 74, size: 64 });
-			p.text(`Hoje o dia é todo seu, ${p.her}.`, { y: 164, size: 40 });
-			p.ground(440);
-			p.dog("standing", { cx: 270, bottom: 442, scale: 5, happy: true });
-			p.sprite(CAKE, { cx: 590, bottom: 442, scale: 8 });
+			p.luli("peek", { x: 230, scale: 0.85, glasses: true });
+			const bottom = p.text("Sextou!", { x: 580, y: 140, size: 64, width: 360 });
+			p.text("O fim de semana é nosso.", { x: 580, y: bottom + 8, size: 40, width: 340 });
+		},
+	},
+
+	// Nights: the 21:00 block, and after midnight.
+	{
+		id: "boa-noite-nuvem", kind: "night", title: "Good night: asleep on a cloud", when: "Every day · 21:00",
+		draw(p) {
+			p.fill(BLACK);
+			p.moon(690, 100, 52);
+			p.decor((kit) => {
+				for (const [x, y, size] of [[560, 60, 16], [760, 230, 12], [80, 400, 18], [300, 440, 12]]) drawTwinkles(kit, x, y, size);
+			}, { night: true });
+			// A white cloud, so she's in black lines on it; puffs in front of her, inside the cloud.
+			const cloud = cloudPuffs(580, 462, 460);
+			p.decor((kit) => kit.limb(cloud, 1));
+			p.luli("asleep", { x: 556, y: 402, scale: 0.62 });
+			p.decor((kit) => kit.inside(limbPath(cloud), () => kit.limb([380, 440, 500, 560, 620, 680, 740, 800].map((x) => [[x, 440, 52]]), 1)));
+			const bottom = p.text(`Boa noite, ${p.her}.`, { x: 50, y: 60, size: 64, align: "left", width: 380, color: WHITE });
+			p.text("Durma bem. Te amo.", { x: 50, y: bottom + 10, size: 40, align: "left", color: WHITE });
+		},
+	},
+	{
+		id: "bocejo", kind: "night", title: "Yawning: it's getting late", when: "Every day · 21:00",
+		draw(p) {
+			p.fill(BLACK);
+			p.decor((kit) => {
+				for (const [x, y, size] of [[60, 50, 14], [420, 40, 18], [760, 60, 12], [80, 420, 16]]) drawTwinkles(kit, x, y, size);
+			}, { night: true });
+			const bottom = p.text("Já tá ficando tarde...", { x: 50, y: 120, size: 64, align: "left", width: 420, color: WHITE });
+			p.text("Bora pra cama?", { x: 50, y: bottom + 10, size: 40, align: "left", color: WHITE });
+			p.luli("peek", { x: 610, scale: 0.95, eyes: "closed", mouth: "yawn", night: true });
+		},
+	},
+	{
+		id: "sonhos", kind: "night", title: "Sweet dreams: words in her dream", when: "Every day · 21:00",
+		draw(p) {
+			p.fill(BLACK);
+			p.decor((kit) => {
+				for (const [x, y, size] of [[60, 60, 16], [180, 250, 12], [760, 330, 14], [640, 440, 18]]) drawTwinkles(kit, x, y, size);
+				drawThoughtBubble(kit, 290, 40, 470, 240, [330, 370]);
+			}, { night: true });
+			const bottom = p.text("Bons sonhos.", { x: 525, y: 82, size: 64 });
+			p.text("Sonha comigo?", { x: 525, y: bottom + 4, size: 40 });
+			p.luli("asleep", { x: 200, y: 466, scale: 0.65, night: true });
+		},
+	},
+	{
+		id: "dormindo-no-texto", kind: "night", title: "Asleep on top of the words", when: "Every day · 21:00",
+		draw(p) {
+			p.fill(BLACK);
+			p.decor((kit) => {
+				for (const [x, y, size] of [[90, 90, 20], [700, 70, 14], [130, 400, 14], [690, 400, 22], [420, 450, 10]]) drawTwinkles(kit, x, y, size);
+			}, { night: true });
+			const bottom = p.text("Boa noite.", { y: 210, size: 64, color: WHITE });
+			p.luli("asleep", { x: 380, y: 229, scale: 0.5, night: true });
+			p.zzz(520, 110, WHITE);
+			p.text(`Até amanhã, ${p.her}.`, { y: bottom + 20, size: 40, color: WHITE });
+		},
+	},
+	{
+		id: "ainda-acordada", kind: "night", title: "Still up? One eye open", when: "Every day · 00:00 and 03:00",
+		draw(p) {
+			p.fill(BLACK);
+			p.moon(700, 90, 40);
+			p.decor((kit) => {
+				for (const [x, y, size] of [[560, 50, 12], [770, 360, 14], [340, 440, 12], [700, 430, 16]]) drawTwinkles(kit, x, y, size);
+			}, { night: true });
+			p.luli("side", { y: 280, scale: 0.95, eyes: "oneOpen", mouth: "smile", night: true });
+			const bottom = p.text("Ainda acordada?", { x: 520, y: 140, size: 64, width: 540, color: WHITE });
+			p.text("Vai dormir, mocinha. Amanhã tem mais.", { x: 520, y: bottom + 8, size: 40, width: 420, color: WHITE });
+		},
+	},
+
+	// Weekends.
+	{
+		id: "sem-despertador", kind: "week", title: "No alarm today: even the clock is asleep", when: "Saturdays and Sundays · 06:00",
+		draw(p) {
+			const bottom = p.text("Hoje o despertador está de folga.", { x: 50, y: 30, size: 64, align: "left", width: 620 });
+			p.text("Dorme mais um pouquinho.", { x: 50, y: bottom + 10, size: 40, align: "left", width: 480 });
+			p.decor((kit) => drawAlarmClock(kit, 650, 290, 86));
+			p.zzz(714, 140);
+			p.luli("asleep", { x: 250, y: 455, scale: 0.65 });
+		},
+	},
+
+	// Special dates.
+	{
+		id: "aniversario", kind: "dates", title: "Her birthday: Luli behind the cake", when: "Her birthday · all day",
+		draw(p) {
+			p.bunting();
+			const bottom = p.text("Feliz aniversário!", { x: 40, y: 110, size: 64, align: "left", width: 440 });
+			p.text(`Hoje o dia é todo seu, ${p.her}.`, { x: 40, y: bottom + 10, size: 40, align: "left", width: 400 });
+			p.luli("peek", { x: 630, y: 330, scale: 0.55, over: "cake", hat: "party", eyes: "happy" });
 		},
 	},
 	{
@@ -2071,61 +2085,25 @@ const FRAMES = [
 		},
 	},
 	{
-		id: "natal", kind: "dates", title: "Christmas", when: "24–25 December · all day",
+		id: "natal", kind: "dates", title: "Christmas: Luli in a Santa hat, in a gift", when: "24–25 December · all day",
 		draw(p) {
-			p.text("Feliz Natal!", { y: 28, size: 64 });
-			p.text("Você é o meu melhor presente.", { y: 118, size: 40 });
-			for (const [x, y, r] of [[60, 60, 18], [740, 60, 18], [80, 250, 12], [730, 220, 14]]) p.snowflake(x, y, r);
-			p.ground(440);
-			p.dog("standing", { cx: 250, bottom: 442, scale: 5, happy: true });
-			p.sprite(TREE, { cx: 580, bottom: 442, scale: 12 });
-			p.star(580, 230, 24);
-			p.sprite(GIFT, { cx: 470, bottom: 442, scale: 5 });
-			p.sprite(GIFT, { cx: 700, bottom: 442, scale: 4 });
+			for (const [x, y, r] of [[60, 50, 18], [460, 60, 14], [760, 40, 16], [420, 420, 14], [770, 300, 12]]) p.snowflake(x, y, r);
+			const bottom = p.text("Feliz Natal!", { x: 50, y: 120, size: 64, align: "left", width: 380 });
+			p.text("Você é o meu melhor presente.", { x: 50, y: bottom + 10, size: 40, align: "left", width: 360 });
+			p.luli("peek", { x: 600, y: 300, scale: 0.7, over: "gift", hat: "santa" });
 		},
 	},
 	{
-		id: "ano-novo", kind: "dates", title: "New Year, fireworks", when: "31 December 21:00 → 1 January",
+		id: "ano-novo", kind: "dates", title: "New Year: party hat and fireworks", when: "31 December 21:00 → 1 January",
 		draw(p) {
 			p.fill(BLACK);
-			p.firework(100, 90, 64, WHITE);
-			p.firework(700, 84, 54, WHITE);
-			p.firework(400, 46, 30, WHITE);
-			p.firework(130, 380, 40, WHITE);
-			p.firework(680, 370, 46, WHITE);
-			p.text(`Feliz ${NEXT_YEAR}!`, { y: 110, size: 64, color: WHITE });
-			p.text("Que venham muitos anos juntos.", { y: 200, size: 40, color: WHITE });
-			p.dog("standing", { cx: 400, bottom: 460, scale: 5, happy: true, line: WHITE });
-		},
-	},
-	{
-		id: "sextou", kind: "week", title: "Friday!", when: "Fridays · 12:00 and 15:00",
-		draw(p) {
-			p.bunting();
-			p.text("Sextou!", { y: 74, size: 64 });
-			p.text("O fim de semana já está chegando.", { y: 164, size: 40 });
-			p.ground(440);
-			p.dog("standing", { cx: 400, bottom: 442, scale: 6, glasses: true, happy: true });
-		},
-	},
-	{
-		id: "segunda", kind: "week", title: "Monday again", when: "Mondays · 06:00 and 09:00",
-		draw(p) {
-			const bottom = p.text("Segunda-feira de novo?", { y: 28, size: 64, width: 640 });
-			p.text("Respira: você tira de letra.", { y: bottom + 4, size: 40 });
-			p.ground(440);
-			p.dog("sleeping", { cx: 360, bottom: 442, scale: 5 });
-			p.zzz(500, 360);
-		},
-	},
-	{
-		id: "fim-de-semana", kind: "week", title: "Have a good weekend", when: "Saturdays · from 09:00",
-		draw(p) {
-			p.text("Bom fim de semana!", { y: 28, size: 64 });
-			p.text("Descansa, você merece.", { y: 118, size: 40 });
-			p.sun(660, 300, 40);
-			p.ground(440);
-			p.dog("sleeping", { cx: 340, bottom: 442, scale: 6 });
+			p.firework(80, 76, 48, WHITE);
+			p.firework(720, 76, 48, WHITE);
+			p.firework(110, 380, 40, WHITE);
+			p.firework(690, 370, 46, WHITE);
+			p.text(`Feliz ${NEXT_YEAR}!`, { y: 40, size: 64, color: WHITE });
+			p.text("Que venham muitos anos juntos.", { y: 130, size: 40, color: WHITE });
+			p.luli("peek", { scale: 0.6, hat: "party", eyes: "happy", night: true });
 		},
 	},
 	{
