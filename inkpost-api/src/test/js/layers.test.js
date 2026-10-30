@@ -40,11 +40,12 @@ describe("a new layer", () => {
 		assert.ok(layer.pixels.every((value) => value === 0));
 	});
 
-	test("for a photo covers the frame, centered, with the default adjustments", () => {
+	test("for a photo shows all of it, covers the frame, centered, with the default adjustments", () => {
 		const source = { width: 4032, height: 3024 };
 		const layer = photoLayer(8, "Beach", source);
 
 		assert.equal(layer.source, source);
+		assert.deepEqual(layer.crop, { left: 0, top: 0, width: 4032, height: 3024 });
 		assert.deepEqual(
 			{ scale: layer.scale, centerX: layer.centerX, centerY: layer.centerY },
 			{ scale: 1, centerX: 400, centerY: 240 },

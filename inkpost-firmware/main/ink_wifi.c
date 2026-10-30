@@ -96,6 +96,7 @@ esp_err_t ink_wifi_connect(const char *ssid, const char *password, uint32_t time
     };
     if (ssid == NULL || password == NULL ||
         strlen(ssid) > sizeof(config.sta.ssid) || strlen(password) > sizeof(config.sta.password)) {
+        ESP_LOGE(TAG, "Invalid SSID or password");
         return ESP_ERR_INVALID_ARG;
     }
     memcpy(config.sta.ssid, ssid, strlen(ssid));
@@ -130,6 +131,15 @@ esp_err_t ink_wifi_connect(const char *ssid, const char *password, uint32_t time
     }
     ESP_LOGE(TAG, "Timed out connecting to %s", ssid);
     return ESP_ERR_TIMEOUT;
+}
+
+esp_err_t ink_wifi_connect_any(const ink_wifi_network_t *networks, size_t count, uint32_t timeout_ms)
+{
+    esp_err_t err = ESP_ERR_INVALID_ARG;
+    for (size_t i = 0; i < count && err != ESP_OK; i++) {
+        err = ink_wifi_connect(networks[i].ssid, networks[i].password, timeout_ms);
+    }
+    return err;
 }
 
 void ink_wifi_disconnect(void)

@@ -8,6 +8,8 @@
 #include "ink_wifi.h"
 #include "secrets.h"
 
+static const ink_wifi_network_t s_networks[] = WIFI_NETWORKS;
+
 // [ink_api] tests need internet access: httpbin.org stands in for the API, so they need no server
 // state. [ink_api][api] tests need the dev API server on the local network, started with
 // INKPOST_DEVICE_KEY=test-device-key and a default rule with exactly one frame.
@@ -17,7 +19,7 @@
 
 static void connect_wifi(void)
 {
-    TEST_ASSERT_EQUAL(ESP_OK, ink_wifi_connect(WIFI_SSID, WIFI_PASSWORD, 30000));
+    TEST_ASSERT_EQUAL(ESP_OK, ink_wifi_connect_any(s_networks, sizeof(s_networks) / sizeof(s_networks[0]), 30000));
 }
 
 static void assert_empty(const ink_api_image_t *image)

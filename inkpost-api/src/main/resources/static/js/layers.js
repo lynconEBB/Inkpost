@@ -1,8 +1,8 @@
 // The editor's layers (D47), with no DOM. The list runs from the bottom up, on a white background. A drawing
-// layer is pixels (raster.js); a photo layer is a photo with its place, size and adjustments, which the
-// page crops and dithers; a text layer is a text in a box (D50), which the page draws in the font. Lists
-// and layers are never changed in place, so the undo history keeps them (D49).
-import { FRAME_HEIGHT, FRAME_WIDTH } from "./crop.js";
+// layer is pixels (raster.js); a photo layer is a photo with its place, size, crop (D58) and adjustments,
+// which the page draws and dithers; a text layer is a text in a box (D50), which the page draws in the font.
+// Lists and layers are never changed in place, so the undo history keeps them (D49).
+import { FRAME_HEIGHT, FRAME_WIDTH, wholePhoto } from "./crop.js";
 import { DEFAULT_SETTINGS } from "./dither.js";
 import { BLACK, blank, WHITE } from "./raster.js";
 import { inBox } from "./text.js";
@@ -13,7 +13,7 @@ export function drawingLayer(id, name) {
 	return { id, kind: "drawing", name, visible: true, pixels: blank() };
 }
 
-/** A photo (anything with a width and a height, e.g. an ImageBitmap), covering the frame, centered. */
+/** A photo (anything with a width and a height, e.g. an ImageBitmap), whole, covering the frame, centered. */
 export function photoLayer(id, name, source) {
 	return {
 		id,
@@ -21,6 +21,7 @@ export function photoLayer(id, name, source) {
 		name,
 		visible: true,
 		source,
+		crop: wholePhoto(source.width, source.height),
 		scale: 1,
 		centerX: FRAME_WIDTH / 2,
 		centerY: FRAME_HEIGHT / 2,

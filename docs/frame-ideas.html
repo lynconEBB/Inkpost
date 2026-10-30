@@ -1351,6 +1351,52 @@ function drawAlarmClock(kit, x, y, r) {
 	kit.solid(ellipsePath(x, y + r * 0.3, r * 0.08, r * 0.1));
 }
 
+/** A power plug pointing right, the tips of its two round pins at (x, y), its cord waving back past `cordX`. */
+function drawPlug(kit, x, y, s, cordX) {
+	const cord = [];
+	for (let i = 0, cx = x - s * 1.8; cx > cordX - s; i++, cx -= s * 0.7) cord.push([cx, y + Math.sin(i * 1.3) * s * 0.4, s * 0.09]);
+	kit.limb(cord, DARK);
+	kit.part(rectPath(x - s * 1.95, y - s * 0.22, s * 0.65, s * 0.44, s * 0.12), 0.62);
+	for (const side of SIDES) kit.part(rectPath(x - s * 0.55, y + side * s * 0.26 - s * 0.08, s * 0.55, s * 0.16, s * 0.08), MUZZLE);
+	kit.part(rectPath(x - s * 1.4, y - s * 0.5, s, s, s * 0.22), DARK);
+	// Grip ridges along its back.
+	kit.stroke(pathOf((path) => {
+		for (const dx of [1.15, 1.0]) {
+			path.moveTo(x - s * dx, y - s * 0.28);
+			path.lineTo(x - s * dx, y + s * 0.28);
+		}
+	}), kit.lineWidth * 0.8);
+}
+
+/** A Brazilian wall socket (NBR 14136) from the front, its middle at (x, y), 2r wide: three holes in a round well. */
+function drawSocket(kit, x, y, r) {
+	kit.part(rectPath(x - r + r * 0.12, y - r + r * 0.15, 2 * r, 2 * r, r * 0.3), 0.45, false);
+	kit.part(rectPath(x - r, y - r, 2 * r, 2 * r, r * 0.3), 1);
+	kit.part(circlePath(x, y, r * 0.62), MUZZLE);
+	for (const [hx, hy] of [[-0.3, -0.04], [0.3, -0.04], [0, 0.16]]) kit.solid(circlePath(x + hx * r, y + hy * r, r * 0.1));
+}
+
+/** A sun at (x, y), r round, its rays reaching out to 1.65r, long and short in turn. */
+function drawSun(kit, x, y, r) {
+	drawRays(kit, x, y, r * 1.2, r * 1.65);
+	kit.part(circlePath(x, y, r), 0.72);
+}
+
+/** A fluffy white cloud `w` wide, its middle at x and its flat bottom along `bottom`. */
+function drawCloud(kit, x, bottom, w) {
+	kit.limb(cloudPuffs(x, bottom, w), 1);
+}
+
+/** A bird flying, seen from afar: two wings in a wide "m", `w` across, its middle at (x, y). */
+function drawBird(kit, x, y, w) {
+	const s = w / 2;
+	kit.stroke(pathOf((path) => {
+		path.moveTo(x - s, y - s * 0.2);
+		path.quadraticCurveTo(x - s * 0.5, y - s * 0.75, x, y);
+		path.quadraticCurveTo(x + s * 0.5, y - s * 0.75, x + s, y - s * 0.2);
+	}));
+}
+
 // ---------------------------------------------------------------------------------------------------------
 // The painter: what the frames draw with. Everything is drawn smooth on the canvas, then made 1 bit.
 // ---------------------------------------------------------------------------------------------------------
@@ -1848,15 +1894,33 @@ const FRAMES = [
 		},
 	},
 	{
-		id: "cafe", kind: "morning", title: "Coffee first: Luli in a mug", when: "Weekdays · 06:00",
+		id: "sol-ja-nasceu", kind: "morning", title: "The sun is up: a morning sky", when: "Every day · 06:00",
 		draw(p) {
-			const bottom = p.text("Primeiro, café.", { x: 50, y: 110, size: 64, align: "left", width: 360 });
-			p.text("Depois a gente conquista o mundo.", { x: 50, y: bottom + 12, size: 40, align: "left", width: 360 });
 			p.decor((kit) => {
-				for (const [x, height] of [[478, 70], [700, 90]]) drawSteam(kit, x, 286, height);
-				drawTwinkles(kit, 760, 90, 18);
+				drawSun(kit, 680, 100, 62);
+				drawCloud(kit, 612, 214, 190);
+				drawCloud(kit, 170, 130, 150);
+				drawCloud(kit, 390, 84, 110);
+				for (const [x, y, w] of [[292, 168, 44], [342, 142, 34], [384, 176, 28]]) drawBird(kit, x, y, w);
+				// Rolling hills along the bottom.
+				kit.part(ellipsePath(620, 610, 440, 190), 0.45);
+				kit.part(ellipsePath(170, 590, 330, 166), 0.62);
 			});
-			p.luli("peek", { x: 590, y: 300, scale: 0.6, over: "mug", eyes: "happy" });
+			const bottom = p.text("O sol já nasceu.", { x: 56, y: 200, size: 64, align: "left", width: 600 });
+			p.text("Mas quem ilumina o meu dia é você.", { x: 56, y: bottom + 8, size: 40, align: "left", width: 560 });
+		},
+	},
+	{
+		id: "previsao", kind: "morning", title: "Today's forecast: sunny", when: "Weekdays · 06:00",
+		draw(p) {
+			p.decor((kit) => {
+				drawSun(kit, 180, 210, 70);
+				drawCloud(kit, 150, 370, 260);
+				drawCloud(kit, 724, 86, 104);
+			});
+			const bottom = p.text("Previsão pra hoje:", { x: 550, y: 140, size: 40, width: 480 });
+			const sunny = p.text("Ensolarado", { x: 550, y: bottom + 2, size: 64, width: 480 });
+			p.text("com 100% de chance de eu pensar em você.", { x: 550, y: sunny + 8, size: 40, width: 480 });
 		},
 	},
 	{
@@ -2070,6 +2134,24 @@ const FRAMES = [
 		},
 	},
 	{
+		id: "dois-anos", kind: "dates", title: "Our 2 years, with a photo of that day", when: "Your anniversary · all day · photo 300 × 300 at x 48, y 52",
+		draw(p) {
+			p.photo(48, 52, 300, 300, { polaroid: 72 });
+			p.text("nós dois", { x: 198, y: 360, size: 40 });
+			p.decor((kit) => {
+				// Tape holding the polaroid up, on its top border: clear of the photo.
+				kit.at(198, 30, -0.04, () => kit.part(rectPath(-60, -13, 120, 26, 3), MUZZLE));
+				// Hearts rising from hers towards the photo.
+				for (const [x, y, size] of [[418, 318, 20], [400, 286, 15], [394, 258, 11]]) kit.part(heartPath(x, y, size), 0.3);
+				drawTwinkles(kit, 700, 282, 18);
+				drawTwinkles(kit, 404, 446, 12);
+			});
+			const bottom = p.text("Feliz 2 anos!", { x: 590, y: 36, size: 64, width: 400 });
+			p.text("Cada dia com você é o meu favorito.", { x: 590, y: bottom + 8, size: 40, width: 400 });
+			p.luli("trotting", { x: 630, y: 470, scale: 0.6, flip: true });
+		},
+	},
+	{
 		id: "namorados", kind: "dates", title: "Valentine's Day (12 June)", when: "12 June · all day",
 		draw(p) {
 			for (let x = 40; x <= W - 40; x += 60) {
@@ -2112,6 +2194,25 @@ const FRAMES = [
 			p.heart(400, 200, 330);
 			p.text("Te amo", { y: 120, size: 64, color: WHITE });
 			p.text("Hoje, amanhã e a cada 3 horas.", { y: 394, size: 40 });
+		},
+	},
+	{
+		id: "me-conecte", kind: "dates", title: "Connect me: on the frame when you give it to her", when: "Shown before it's plugged in: e-paper keeps it without power",
+		draw(p) {
+			const bottom = p.text("Me conecte", { y: 40, size: 64 });
+			p.text("Tenho muita coisa pra te mostrar.", { y: bottom + 6, size: 40, width: 700 });
+			p.decor((kit) => {
+				drawPlug(kit, 364, 300, 56, 0);
+				kit.dashed(pathOf((path) => {
+					path.moveTo(384, 300);
+					path.lineTo(420, 300);
+				}), 4, [8, 8]);
+				drawSocket(kit, 500, 300, 66);
+				drawTwinkles(kit, 166, 72, 22);
+				drawTwinkles(kit, 626, 56, 14);
+				drawTwinkles(kit, 616, 214, 16);
+			});
+			p.luli("peek", { x: 690, scale: 0.5, eyes: "puppy" });
 		},
 	},
 ];

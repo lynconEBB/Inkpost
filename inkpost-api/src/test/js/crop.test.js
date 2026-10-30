@@ -1,6 +1,15 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { coverScale, coverSize, fitScale, photoRect, visiblePart } from "../../main/resources/static/js/crop.js";
+import {
+	coverScale,
+	coverSize,
+	cropCoverScale,
+	cropPhoto,
+	fitScale,
+	photoRect,
+	visiblePart,
+	wholePhoto,
+} from "../../main/resources/static/js/crop.js";
 
 const close = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-9, `${actual} is not ${expected}`);
 
@@ -86,5 +95,84 @@ describe("the visible part", () => {
 		assert.equal(visiblePart({ left: 800, top: 0, width: 10, height: 10 }), null);
 		assert.equal(visiblePart({ left: -10, top: 0, width: 10, height: 10 }), null);
 		assert.equal(visiblePart({ left: 0, top: 480, width: 10, height: 10 }), null);
+	});
+});
+
+describe("the crop", () => {
+	// A 4:3 photo at half the cover size, 400 × 300 in the middle of the frame: 4032 / 400 photo pixels per
+	// frame pixel.
+	const photo = {
+		source: { width: 4032, height: 3024 },
+		crop: wholePhoto(4032, 3024),
+		scale: 0.5,
+		centerX: 400,
+		centerY: 240,
+	};
+	const rectOf = (layer) =>
+		photoRect(layer.source.width, layer.source.height, layer.scale, layer.centerX, layer.centerY, layer.crop);
+	const cropped = (handle, dx, dy) => ({ ...photo, ...cropPhoto(photo, handle, dx, dy) });
+
+	test("is the whole photo at first, where the photo is", () => {
+		assert.deepEqual(wholePhoto(4032, 3024), { left: 0, top: 0, width: 4032, height: 3024 });
+		assert.deepEqual(rectOf(photo), { left: 200, top: 90, width: 400, height: 300 });
+	});
+
+	test("shows its part of the photo, at the photo's size, around its center", () => {
+		const crop = { left: 1008, top: 0, width: 2016, height: 3024 };
+		assert.deepEqual(photoRect(4032, 3024, 0.5, 400, 240, crop), { left: 300, top: 90, width: 200, height: 300 });
+	});
+
+	test("moves the edge a handle holds, and the photo stays where it is", () => {
+		const layer = cropped("w", 30, 99);
+		close(layer.crop.left, 30 * 10.08);
+		close(layer.crop.width, 370 * 10.08);
+		assert.equal(layer.crop.top, 0);
+		assert.equal(layer.crop.height, 3024);
+		assert.deepEqual(rectOf(layer), { left: 230, top: 90, width: 370, height: 300 });
+	});
+
+	test("moves both edges a corner holds", () => {
+		const layer = cropped("se", -100, -50);
+		assert.deepEqual(layer.crop, { left: 0, top: 0, width: 300 * 10.08, height: 250 * 10.08 });
+		assert.deepEqual(rectOf(layer), { left: 200, top: 90, width: 300, height: 250 });
+	});
+
+	test("shows the photo again when an edge goes back out, but not past the photo's edge", () => {
+		const inside = cropped("n", 0, 100);
+		const back = { ...inside, ...cropPhoto(inside, "n", 0, -500) };
+		assert.equal(back.crop.top, 0);
+		close(back.crop.height, 3024);
+		assert.deepEqual(rectOf(back), rectOf(photo));
+		assert.deepEqual(cropPhoto(photo, "nw", -40, -40), { crop: photo.crop, centerX: 400, centerY: 240 });
+	});
+
+	test("stops 16 pixels from the opposite edge", () => {
+		assert.deepEqual(rectOf(cropped("e", -1000, 0)), { left: 200, top: 90, width: 16, height: 300 });
+		assert.deepEqual(rectOf(cropped("n", 0, 1000)), { left: 200, top: 374, width: 400, height: 16 });
+	});
+
+	test("keeps an edge that's closer than that where it is", () => {
+		const thin = { ...photo, crop: { left: 0, top: 0, width: 4032, height: 100.8 }, centerY: 240 };
+		assert.equal(rectOf(thin).height, 10);
+		const layer = { ...thin, ...cropPhoto(thin, "s", 0, -5) };
+		assert.equal(rectOf(layer).height, 10);
+	});
+
+	test("goes with the photo when it moves or changes size", () => {
+		const layer = cropped("w", 200, 0);
+		const moved = { ...layer, centerX: layer.centerX + 10 };
+		assert.deepEqual(rectOf(moved), { left: 410, top: 90, width: 200, height: 300 });
+		assert.deepEqual(rectOf({ ...layer, scale: 1 }), { left: 300, top: -60, width: 400, height: 600 });
+	});
+
+	test("covers the frame at its own cover scale", () => {
+		assert.equal(cropCoverScale(4032, 3024, wholePhoto(4032, 3024)), 1);
+		const square = { left: 504, top: 0, width: 3024, height: 3024 };
+		assert.deepEqual(photoRect(4032, 3024, cropCoverScale(4032, 3024, square), 400, 240, square), {
+			left: 0,
+			top: -160,
+			width: 800,
+			height: 800,
+		});
 	});
 });

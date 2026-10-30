@@ -201,6 +201,18 @@ Each fetch sends the device key and, unless it is the daily redraw (D35), `If-No
 **Why:** `main.c` stays just the cycle (D37), and the status and ETag handling is tested on the
 board (D31).
 
+### D57. Up to 3 Wi-Fi networks, tried in order
+Refines D30: `secrets.h` lists 1 to 3 networks in `WIFI_NETWORKS`, an array of `{ssid, password}`;
+another count fails the build. Each attempt (D2) calls `ink_wifi_connect_any`, which tries them in
+the listed order and stays on the first that connects. No scan first, and nothing remembers which
+one worked last time (D1), so the usual network goes first. Each network gets its own 30 s timeout;
+one out of range or with a wrong password fails sooner, as soon as the driver reports a disconnect.
+The worst wake is 3 attempts × 3 networks × 30 s, about 4.5 min, harmless on USB power (D6).
+An invalid entry (SSID over 32 bytes, password over 64) is logged and skipped, not fatal.
+The Wi-Fi tests need the first network in range; the other tests connect through the whole list.
+**Why:** the frame keeps working on another network (a second router, a phone hotspot) without a
+reflash, and trying in order is the fewest cases.
+
 ## API / web app
 
 ### D14. One Spring Boot app: Thymeleaf web app + one REST endpoint for the device
@@ -522,15 +534,15 @@ layer). There are three kinds: drawing, photo and text (D50). They only live in 
 frame don't change, and a saved frame can't be edited again.
 - **Drawing layer:** a frame-sized array, one value per pixel: clear (see-through), black or white.
   Strokes and shapes become pixels at once (D18).
-- **Photo layer:** the decoded photo with a center, a scale (1 = covers the frame) and its brightness,
-  contrast and dithering (D44), all adjustable until Save. A photo is an opaque rectangle in whole
-  pixels.
+- **Photo layer:** the decoded photo with a center, a scale (1 = covers the frame), a crop (D58) and
+  its brightness, contrast and dithering (D44), all adjustable until Save. A photo is an opaque
+  rectangle in whole pixels.
 - **Composite:** white, then every visible layer from the bottom up. A drawing's black and white
   pixels cover what's below and its clear pixels let it through; a photo covers the part of the frame
   it's on; a text paints its color where its letters are. Hidden layers are left out of the saved frame.
 - **Each photo is dithered by itself,** only its part inside the frame, so drawings stay crisp over
-  photos. The page keeps each photo's crop and dithered pixels until its place, size or adjustments
-  change.
+  photos. The page keeps each photo's gray and dithered pixels until its place, size, crop or
+  adjustments change.
 - A new editor has one empty drawing layer. Leaving the page with changes asks first
   (`beforeunload`): the layers are kept nowhere else.
 
@@ -617,6 +629,23 @@ server.
 **Why:** the server needs nothing but Docker and two files, and doesn't spend its time on builds. A
 named volume needs no directory or permissions set up on the host.
 
+### D58. Cropping a photo: its handles move its edges
+A photo layer (D47) has a crop: the rectangle of the photo it shows, in the photo's own pixels, the
+whole photo at first (`crop.js`).
+- With the Move tool, the active photo has a text box's 8 handles (D50). A handle moves the edges it
+  holds, and the photo stays where it is and the same size under them, so an edge hides or shows it
+  there. An edge stops at the photo's own edge, and 16 px from the opposite one. A crop is one undo step
+  when let go (D49), and shows in gray while dragged, like a move (D44).
+- The size still scales the whole photo (100 % = it covers the frame), now around the crop's middle:
+  cropping never changes the size, and the size never changes the crop. Moving moves the crop too.
+- "Cover the frame" makes the crop cover the frame; "Whole photo" takes the crop off and fits the whole
+  photo in the frame. Both center it.
+- What's cropped off isn't shown while cropping: dragging the edge back out, or "Whole photo", shows it
+  again.
+
+**Why:** a space for a photo in a frame (a polaroid, half the frame) needs a photo of that shape, and a
+size alone can't make a 4:3 photo square. The text box's handles add no tool or mode.
+
 ## Mount
 
 ### D51. The mount starts from an online design for the same panel, with a flat top
@@ -693,6 +722,15 @@ is unchanged. `case.py` stays as the one-piece version.
 - Each wall prints upside down on its flat top, pins up, so no piece needs supports.
 
 **Why:** pins hold the pieces without glue or screws, so the case can be taken apart again.
+
+### D56. A heart, "ANA" and another heart, printed apart and glued on the front face
+`inkpost-mount/front_pieces.py` builds five flat pieces, 2 mm thick, to glue in a row across the
+middle of the front face: a heart, A, N, A and a heart. The letters are Noto Sans Bold, 16 mm tall
+up the face; the hearts are 14 mm wide, the same shape as in `docs/frame-ideas.html`; 6 mm between
+pieces, about 97 mm in all. They print flat on their backs, all in one STL or from an STL for each
+shape (a heart, an A, an N), and stay above the base, so version 2's front wall still comes off
+(D54).
+**Why:** separate pieces can be another colour, and print without supports.
 
 ## Guiding principle
 

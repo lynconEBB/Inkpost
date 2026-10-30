@@ -1,7 +1,16 @@
 // The frame editor (D47–D50): drawings, photos and texts in layers, flattened into the 800×480 black and
 // white PNG the API takes (D41), all in the browser (D19, D44), then sent to POST /api/frames.
 import { api } from "./api.js";
-import { FRAME_HEIGHT, FRAME_WIDTH, fitScale, photoRect, visiblePart } from "./crop.js";
+import {
+	cropCoverScale,
+	cropPhoto,
+	FRAME_HEIGHT,
+	FRAME_WIDTH,
+	fitScale,
+	photoRect,
+	visiblePart,
+	wholePhoto,
+} from "./crop.js";
 import { adjust, DEFAULT_SETTINGS, grayscale, render, toRgba } from "./dither.js";
 import { History } from "./history.js";
 import {
@@ -35,7 +44,7 @@ const TOOL_KEYS = {
 	t: "text",
 };
 const TOOL_HINTS = {
-	move: "Drag the layer, or use the arrow keys (Shift: 10 pixels).",
+	move: "Drag the layer, or use the arrow keys (Shift: 10 pixels). A photo's handles crop it.",
 	hand: "Drag to scroll the view. Space or the middle button scrolls with any tool.",
 	pencil: "Draw in the color.",
 	pixel: "Fill whole cells of the grid in the color.",
@@ -194,9 +203,14 @@ textAlign.addEventListener("change", () => {
 textColor.addEventListener("change", () => {
 	commit(updateLayer(steps.current, activeId, { color: textColor.value === "white" ? WHITE : BLACK }));
 });
-document.getElementById("cover").addEventListener("click", () => placePhoto(() => 1));
+document.getElementById("cover").addEventListener("click", () => {
+	placePhoto(({ source, crop }) => ({ scale: cropCoverScale(source.width, source.height, crop) }));
+});
 document.getElementById("whole-photo").addEventListener("click", () => {
-	placePhoto((source) => fitScale(source.width, source.height));
+	placePhoto(({ source }) => ({
+		crop: wholePhoto(source.width, source.height),
+		scale: fitScale(source.width, source.height),
+	}));
 });
 
 area.addEventListener("pointerdown", startGesture);
@@ -432,12 +446,12 @@ function rename() {
 	commit(updateLayer(steps.current, activeId, { name }));
 }
 
-/** The active photo at a scale (from its source), centered. */
-function placePhoto(scaleOf) {
+/** The active photo with `changesOf(layer)` (a scale, a crop), centered. */
+function placePhoto(changesOf) {
 	const layer = findLayer(steps.current, activeId);
 	commit(
 		updateLayer(steps.current, activeId, {
-			scale: scaleOf(layer.source),
+			...changesOf(layer),
 			centerX: FRAME_WIDTH / 2,
 			centerY: FRAME_HEIGHT / 2,
 		}),
@@ -473,10 +487,11 @@ function photoPart(layer) {
 	if (!part) {
 		return null;
 	}
-	const place = [rect.left, rect.top, rect.width, rect.height].join();
+	const { crop } = layer;
+	const place = [rect.left, rect.top, rect.width, rect.height, crop.left, crop.top, crop.width, crop.height].join();
 	let cached = photoCache.get(layer.id);
 	if (cached?.place !== place) {
-		cached = { place, gray: cropGray(layer.source, rect, part) };
+		cached = { place, gray: cropGray(layer, rect, part) };
 		photoCache.set(layer.id, cached);
 	}
 	if (layer.id === roughPhotoId) {
@@ -490,15 +505,17 @@ function photoPart(layer) {
 	return { ...part, values: cached.values };
 }
 
-function cropGray(source, rect, part) {
+/** The photo's crop drawn in its place, and the part inside the frame read back as gray values. */
+function cropGray({ source, crop }, rect, part) {
 	cropContext.clearRect(0, 0, FRAME_WIDTH, FRAME_HEIGHT);
 	cropContext.imageSmoothingQuality = "high";
-	cropContext.drawImage(source, rect.left, rect.top, rect.width, rect.height);
+	const { left, top, width, height } = rect;
+	cropContext.drawImage(source, crop.left, crop.top, crop.width, crop.height, left, top, width, height);
 	return grayscale(cropContext.getImageData(part.left, part.top, part.width, part.height).data);
 }
 
 function layerRect(layer) {
-	return photoRect(layer.source.width, layer.source.height, layer.scale, layer.centerX, layer.centerY);
+	return photoRect(layer.source.width, layer.source.height, layer.scale, layer.centerX, layer.centerY, layer.crop);
 }
 
 /** A text layer's mask (layers.js's text): 1 where the text is, 0 around it, in its box. */
@@ -540,8 +557,8 @@ function lettered(layer) {
 }
 
 /**
- * The outline of the active photo, so a collage shows where each photo is, or of the active text's box, with
- * handles to resize it while the Text or Move tool is chosen.
+ * The outline of the active photo, so a collage shows where each photo is, with handles to crop it while the
+ * Move tool is chosen; or of the active text's box, with handles to resize it while the Text or Move tool is.
  */
 function showBounds() {
 	const layer = findLayer(layers, activeId);
@@ -549,7 +566,8 @@ function showBounds() {
 	if (bounds.hidden) {
 		return;
 	}
-	bounds.classList.toggle("editor__bounds--handles", layer.kind === "text" && ["text", "move"].includes(tool));
+	const handles = tool === "move" || (tool === "text" && layer.kind === "text");
+	bounds.classList.toggle("editor__bounds--handles", handles);
 	const rect = layer.kind === "photo" ? layerRect(layer) : layer;
 	bounds.style.left = `${(rect.left / FRAME_WIDTH) * 100}%`;
 	bounds.style.top = `${(rect.top / FRAME_HEIGHT) * 100}%`;
@@ -734,9 +752,12 @@ function moved(layer, dx, dy) {
 	return { pixels: shift(layer.pixels, dx, dy) };
 }
 
-/** A handle of the active text's box (D50) moves the edges it holds. */
+/** A handle of the active text's box (D50) or photo (D58) moves the edges it holds: it resizes a box, crops a photo. */
 function startResize(event, box, handle) {
 	const layer = findLayer(steps.current, activeId);
+	if (layer.kind === "photo") {
+		roughPhotoId = layer.id;
+	}
 	return { kind: "resize", layer, handle, x: event.clientX, y: event.clientY, scale: FRAME_WIDTH / box.width };
 }
 
@@ -744,7 +765,9 @@ function continueResize(event) {
 	const dx = Math.round((event.clientX - gesture.x) * gesture.scale);
 	const dy = Math.round((event.clientY - gesture.y) * gesture.scale);
 	gesture.changed = dx !== 0 || dy !== 0;
-	layers = updateLayer(steps.current, gesture.layer.id, resizeBox(gesture.layer, gesture.handle, dx, dy));
+	const { layer, handle } = gesture;
+	const changes = layer.kind === "photo" ? cropPhoto(layer, handle, dx, dy) : resizeBox(layer, handle, dx, dy);
+	layers = updateLayer(steps.current, layer.id, changes);
 	redraw();
 }
 

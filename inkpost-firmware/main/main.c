@@ -12,6 +12,7 @@
 #include "secrets.h"
 
 #define ATTEMPTS          3     // D2: tries per wake before giving up until the next one
+#define MAX_WIFI_NETWORKS 3     // D57: each attempt tries them all, so this bounds a wake's Wi-Fi time
 #define WIFI_TIMEOUT_MS   30000
 #define NTP_TIMEOUT_MS    10000
 #define CYCLE_HOURS       3     // D3: wakes on the 00:00, 03:00, ..., 21:00 marks
@@ -21,6 +22,12 @@
 #define DAILY_REDRAW_HOUR 0     // D35: the wake at this mark redraws even an unchanged image
 
 static const char *TAG = "inkpost";
+
+// D57: tried in this order until one connects
+static const ink_wifi_network_t s_networks[] = WIFI_NETWORKS;
+#define WIFI_NETWORK_COUNT (sizeof(s_networks) / sizeof(s_networks[0]))
+_Static_assert(WIFI_NETWORK_COUNT >= 1 && WIFI_NETWORK_COUNT <= MAX_WIFI_NETWORKS,
+               "WIFI_NETWORKS in secrets.h needs 1 to 3 networks");
 
 // The ETag of the image on the panel, or "" (D9). RTC memory survives deep sleep but not a reset
 // or a power-on, so those start without one and draw the next frame (D10, D12).
@@ -72,7 +79,7 @@ static esp_err_t show_image(bool daily_redraw)
 // One attempt at the whole update: Wi-Fi, clock, image, panel
 static esp_err_t update(void)
 {
-    ESP_RETURN_ON_ERROR(ink_wifi_connect(WIFI_SSID, WIFI_PASSWORD, WIFI_TIMEOUT_MS), TAG, "Wi-Fi");
+    ESP_RETURN_ON_ERROR(ink_wifi_connect_any(s_networks, WIFI_NETWORK_COUNT, WIFI_TIMEOUT_MS), TAG, "Wi-Fi");
     ink_time_sync(NTP_TIMEOUT_MS); // If it fails, the clock kept through deep sleep is used
     return show_image(is_daily_redraw_wake());
 }

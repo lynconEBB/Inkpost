@@ -8,7 +8,8 @@ A gift: a picture frame with a Waveshare 7.5" e-paper display driven by an ESP32
 - `inkpost-api/`: the API that decides and serves what the frame displays.
 - `inkpost-mount/`: the 3D-printed case. `case.py` (build123d) builds it; see its header for how to
   run it and the browser viewer. `case_v2.py` is the same case in pieces that go together without
-  glue. `prototype.blend` is the online design it started from.
+  glue. `front_pieces.py` builds the hearts and letters glued on its front face. `prototype.blend`
+  is the online design it started from.
 
 ## Git workflow
 

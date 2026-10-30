@@ -803,7 +803,8 @@ a {
 	pointer-events: none;
 }
 
-/* A text box's handles, with the Text and Move tools: small squares, with a 44 px area to grab them. */
+/* A text box's handles, with the Text and Move tools, or a photo's, with the Move tool: small squares, with
+ * a 44 px area to grab them. */
 .handle {
 	position: absolute;
 	display: none;

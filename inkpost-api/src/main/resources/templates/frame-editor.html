@@ -123,7 +123,7 @@
 					<canvas class="editor__canvas" id="canvas" width="800" height="480" tabindex="0"
 						aria-label="The frame. Draw with the tools, or with the Move tool, use the arrow keys to move the layer."></canvas>
 					<div class="editor__grid" id="grid" hidden></div>
-					<!-- The active photo's or text's box; a text box is resized by its handles (D50). -->
+					<!-- The active photo's or text's box; its handles crop a photo (D58), resize a text box (D50). -->
 					<div class="editor__bounds" id="bounds" hidden>
 						<span class="handle" data-handle="nw"></span>
 						<span class="handle" data-handle="n"></span>
@@ -183,6 +183,7 @@
 							<button type="button" class="button" id="cover">Cover the frame</button>
 							<button type="button" class="button" id="whole-photo">Whole photo</button>
 						</div>
+						<p class="hint">To crop it, drag the photo's handles with the Move tool. "Whole photo" takes the crop off.</p>
 					</div>
 					<div class="field">
 						<div class="field__row">

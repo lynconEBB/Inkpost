@@ -7,12 +7,14 @@
 #include "ink_wifi.h"
 #include "secrets.h"
 
+static const ink_wifi_network_t s_networks[] = WIFI_NETWORKS;
+
 // Needs internet access: httpbin.org echoes requests, badssl.com serves broken certificates.
 #define HTTPBIN "https://httpbin.org"
 
 static void connect_wifi(void)
 {
-    TEST_ASSERT_EQUAL(ESP_OK, ink_wifi_connect(WIFI_SSID, WIFI_PASSWORD, 30000));
+    TEST_ASSERT_EQUAL(ESP_OK, ink_wifi_connect_any(s_networks, sizeof(s_networks) / sizeof(s_networks[0]), 30000));
 }
 
 static esp_err_t get(const char *url, size_t max_body_len, ink_http_response_t *resp)

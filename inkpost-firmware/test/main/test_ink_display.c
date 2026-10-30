@@ -11,6 +11,8 @@
 #include "ink_wifi.h"
 #include "secrets.h"
 
+static const ink_wifi_network_t s_networks[] = WIFI_NETWORKS;
+
 // Needs the panel connected. The drawing tests are checked by eye.
 
 // Dev API server on the local network ([api] tests only). The stripes pattern is 8 px vertical
@@ -60,7 +62,7 @@ TEST_CASE("clears the display", "[display]")
 TEST_CASE("draws the stripes test image from the API", "[display][api]")
 {
     // Download first, so the panel isn't powered during the network part
-    TEST_ASSERT_EQUAL(ESP_OK, ink_wifi_connect(WIFI_SSID, WIFI_PASSWORD, 30000));
+    TEST_ASSERT_EQUAL(ESP_OK, ink_wifi_connect_any(s_networks, sizeof(s_networks) / sizeof(s_networks[0]), 30000));
     ink_http_response_t resp;
     TEST_ASSERT_EQUAL(ESP_OK, ink_http_request(&(ink_http_request_t){ .url = TEST_IMAGE_URL }, &resp));
     TEST_ASSERT_EQUAL(200, resp.status);
