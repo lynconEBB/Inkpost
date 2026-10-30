@@ -102,7 +102,11 @@ The `ink_` prefix avoids clashes with ESP-IDF names (`wifi_*`, `HTTP_GET`).
 **Why:** the code is only used by this project; blocking calls make the cycle (D1) read top to bottom.
 
 ### D29. HTTP layer contract
-- HTTPS is always verified against the ESP-IDF certificate bundle.
+- HTTPS is always verified against the ESP-IDF certificate bundle, with cross-signed verification on
+  (`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY`). Cloudflare's chain ends in GTS Root R4
+  cross-signed by GlobalSign Root CA, which the bundle no longer has; without the option the bundle
+  only checks the issuer of the chain's last certificate, so the handshake fails. It costs ~700 bytes
+  of heap.
 - `ink_http_request` returns `ESP_OK` whenever a complete response arrived, whatever the status
   code; the status, all response headers and the body are in the response struct.
 - The whole body is buffered in RAM, up to a max size (default 64 KB). A body cut short is an
